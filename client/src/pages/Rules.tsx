@@ -62,14 +62,14 @@ export default function Rules() {
           <p className="text-muted-foreground mt-2">필수 안전 프로토콜 및 가이드라인입니다.</p>
         </div>
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input 
             placeholder="수칙 검색..." 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pr-9"
             data-testid="input-search-rules"
           />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         </div>
       </div>
 
