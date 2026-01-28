@@ -131,15 +131,15 @@ async function seedDatabase() {
   const teams = await storage.getTeams(2025);
   if (teams.length === 0) {
     const seedTeams = [
-      { name: "서울지사", vehicleCount: 50, suggestion: 2, activity: 1 },
-      { name: "부산지사", vehicleCount: 45, suggestion: 5, activity: 5 },
-      { name: "대구지사", vehicleCount: 30, workAccident: 1 },
-      { name: "광주지사", vehicleCount: 25 },
-      { name: "대전지사", vehicleCount: 40, inspectionMiss: 1 },
-      { name: "경기본부", vehicleCount: 80, fineSpeed: 2, suggestion: 10 },
-      { name: "인천지사", vehicleCount: 35 },
-      { name: "강원지사", vehicleCount: 20 },
-      { name: "제주지사", vehicleCount: 15 },
+      { name: "창원1팀", vehicleCount: 15, suggestion: 2, activity: 1 },
+      { name: "창원2팀", vehicleCount: 14, suggestion: 5, activity: 5 },
+      { name: "진주팀", vehicleCount: 12, workAccident: 1 },
+      { name: "통영팀", vehicleCount: 10 },
+      { name: "거제팀", vehicleCount: 11, inspectionMiss: 1 },
+      { name: "김해팀", vehicleCount: 18, fineSpeed: 2, suggestion: 3 },
+      { name: "양산팀", vehicleCount: 13 },
+      { name: "밀양팀", vehicleCount: 9 },
+      { name: "함안팀", vehicleCount: 8 },
     ];
     
     for (const t of seedTeams) {
