@@ -1,0 +1,1663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>안전성평가제 포털</title>
+
+<style>
+  :root{
+    --line:#d9dee9;
+    --bg:#f1f5f9;
+    --text:#0f172a;
+    --muted:#475569;
+    --head:#eef2ff;
+    --good:#16a34a;
+    --mid:#f59e0b;
+    --low:#dc2626;
+    --chip:#eef2ff;
+    --barbg:#eef2f7;
+
+    /* ✅ 관리자 설정(기본값) */
+    --admin-table-zoom: 0.80;
+    --admin-chart-minh: 240px;
+    --admin-dlg-maxw: 520px;
+    --admin-dlg-table-minw: 420px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Malgun Gothic", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  /* 데스크톱 기본은 무스크롤(포털 구조상) */
+  body{ overflow:hidden; }
+
+  /* =========================
+     ✅ 상단바 + 티커 + 메뉴
+  ========================= */
+  .topbar{
+    position:fixed;
+    top:0; left:0; right:0;
+    height:54px;
+    z-index:9998;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 12px;
+    background:#ffffffcc;
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .menuBtn{
+    width:42px; height:42px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:18px;
+    font-weight:1000;
+    cursor:pointer;
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+  .brand .t1{
+    font-weight:1000;
+    letter-spacing:-0.2px;
+    line-height:1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .brand .t2{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .ticker{
+    position:fixed;
+    top:54px; left:0; right:0;
+    height:34px;
+    z-index:9997;
+    display:flex;
+    align-items:center;
+    padding:0 12px;
+    background:#0f172a;
+    color:#fff;
+    border-bottom:1px solid #0b1220;
+  }
+  .ticker .label{
+    font-weight:1000;
+    font-size:12px;
+    padding:3px 8px;
+    border-radius:999px;
+    background:rgba(255,255,255,.12);
+    margin-right:10px;
+    flex:0 0 auto;
+  }
+  .ticker .text{
+    font-size:13px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    opacity:.95;
+  }
+
+  /* =========================
+     ✅ 사이드 메뉴(슬라이드)
+  ========================= */
+  .drawerOverlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.25);
+    z-index:9999;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .drawerOverlay.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .drawer{
+    position:fixed;
+    top:0; left:0;
+    height:100vh;
+    width:286px;
+    background:#fff;
+    z-index:10000;
+    border-right:1px solid var(--line);
+    box-shadow:0 20px 40px rgba(0,0,0,.18);
+    transform:translateX(-102%);
+    transition:transform .18s ease;
+    display:flex;
+    flex-direction:column;
+  }
+  .drawer.open{ transform:translateX(0); }
+
+  .drawerHead{
+    height:88px;
+    padding:14px 14px 12px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:6px;
+    background:linear-gradient(180deg,#ffffff 0%, #f8fafc 100%);
+  }
+  .drawerTitle{
+    font-weight:1000;
+    font-size:16px;
+    letter-spacing:-0.2px;
+  }
+  .drawerSub{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.2;
+  }
+  .drawerBody{
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .navBtn{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    background:#fff;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    font-weight:1000;
+  }
+  .navBtn:hover{ background:#f8fafc; }
+  .navBtn.active{
+    background:var(--chip);
+    border-color:#c7d2fe;
+  }
+  .navHint{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:900;
+  }
+
+  /* =========================
+     ✅ 콘텐츠 영역
+  ========================= */
+  .content{
+    position:relative;
+    padding-top: 54px; /* topbar */
+  }
+  .contentInner{
+    padding-top: 34px; /* ticker */
+  }
+
+  .wrap{
+    height:calc(100vh - 54px - 34px);
+    max-width:1550px;
+    margin:0 auto;
+    padding:10px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  h1{margin:0; font-size:25px; font-weight:1000; letter-spacing:-0.2px;}
+
+  .card{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:9px 10px;
+    background:#fff;
+  }
+
+  .hint{font-size:12px; color:var(--muted); line-height:1.25;}
+
+  button, select, input{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:6px 10px;
+    font-weight:1000;
+    font-size:14px;
+    background:#fff;
+  }
+  button:hover{background:#f8fafc;}
+  .btn-primary{background:var(--chip); border-color:#c7d2fe;}
+
+  /* =========================
+     ✅ 페이지 공통 레이아웃
+  ========================= */
+  .page{ display:none; }
+  .page.active{ display:block; }
+
+  /* =========================
+     ✅ 대시보드(그래프 위 / 표 아래)
+  ========================= */
+  .top{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+
+  .main{flex:1; min-height:0; display:flex; flex-direction:column; gap:8px;}
+
+  /* ===== 그래프(세로 막대) ===== */
+  .chartcard{
+    flex:0.95;
+    min-height:var(--admin-chart-minh);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    overflow:hidden;
+  }
+  .charthead{display:flex; justify-content:space-between; align-items:center; gap:6px;}
+  .charttitle{font-size:22px; font-weight:1000;}
+
+  .chart{
+    flex:1;
+    min-height:0;
+    overflow:auto;
+    padding:10px;
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(95px, 1fr);
+    gap:10px;
+    align-items:end;
+  }
+
+  .vcol{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow:0 6px 16px rgba(15,23,42,.06);
+    padding:8px 12px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:95px;
+  }
+
+  .vmeta{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+  .vrank{
+    width:28px; height:26px;
+    border-radius:999px;
+    display:grid; place-items:center;
+    font-weight:1000; font-size:12px;
+    background:var(--chip);
+    border:1px solid #c7d2fe;
+    color:#1e293b;
+    flex:0 0 auto;
+  }
+  .vname{
+    font-weight:1000;
+    font-size:13px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    min-width:0;
+  }
+
+  .vbar{
+    position:relative;
+    height:200px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    overflow:hidden;
+  }
+  .vmax{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    background:linear-gradient(180deg, rgba(199,210,254,.35) 0%, rgba(199,210,254,.20) 100%);
+  }
+  .vnow{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    border-top-left-radius:14px;
+    border-top-right-radius:14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+  }
+  .vnow.good{ background:linear-gradient(180deg, #22c55e 0%, #16a34a 100%); }
+  .vnow.mid { background:linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%); }
+  .vnow.low { background:linear-gradient(180deg, #f87171 0%, #dc2626 100%); }
+
+  .vscore{
+    text-align:center;
+    font-weight:1000;
+    border-radius:999px;
+    padding:6px 0;
+    background:linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%);
+    border:1px solid #c7d2fe;
+    letter-spacing:-0.2px;
+    font-size:13px;
+  }
+
+  /* ===== 표 ===== */
+  .tablewrap{
+    flex:1.05;
+    min-height:0;
+    overflow:hidden;
+    zoom:var(--admin-table-zoom);
+  }
+
+  table{width:100%; border-collapse:collapse; table-layout:fixed; font-size:15px;}
+  th,td{
+    border:1px solid var(--line);
+    padding:4px 5px;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  thead th{background:var(--head); font-weight:1000;}
+  td.left{text-align:left; font-weight:1000;}
+
+  .score{font-weight:1000;}
+  .score.good{color:var(--good);}
+  .score.mid{color:var(--mid);}
+  .score.low{color:var(--low);}
+
+  .warn-mid{background:#fff7ed;}
+  .warn-low{background:#fee2e2;}
+
+  /* ✅ 100점은 깜빡 X / 감점(100점 미만)만 깜빡 */
+  .blink{animation:blink 1s infinite;}
+  @keyframes blink{50%{opacity:.45;}}
+
+  .spinNum{
+    width:74px;
+    padding:5px 10px;
+    border:2px solid #111827;
+    border-radius:12px;
+    font-weight:1000;
+    font-size:13px;
+    background:#fff;
+    outline:none;
+  }
+  .spinNum:focus{
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+  }
+  .spinNum.sm{ width:64px; padding:4px 8px; border-radius:12px; border-width:2px; font-size:14px; }
+
+  /* =========================
+     ✅ 안전수칙 / 공지/알림 / 안전교육 카드
+  ========================= */
+  .pageTitle{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:10px;
+  }
+  .pageTitle h2{
+    margin:0;
+    font-size:22px;
+    font-weight:1000;
+    letter-spacing:-0.2px;
+  }
+
+  .list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:8px;
+  }
+  .item{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:linear-gradient(180deg,#fff 0%, #fbfdff 100%);
+    box-shadow:0 6px 16px rgba(15,23,42,.06);
+  }
+  .item .title{
+    font-weight:1000;
+    font-size:16px;
+    margin:0 0 6px 0;
+    letter-spacing:-0.2px;
+  }
+  .item .meta{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .item .body{
+    white-space:pre-wrap;
+    line-height:1.45;
+    font-size:14px;
+  }
+  .itemActions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+
+  .formRow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  .formRow input[type="text"]{ min-width:260px; flex:1; }
+  .formRow textarea{
+    width:100%;
+    min-height:96px;
+    resize:vertical;
+    padding:10px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    font-family:inherit;
+    font-size:14px;
+    font-weight:900;
+  }
+
+  /* =========================
+     ✅ 모달
+  ========================= */
+  dialog{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    max-width:var(--admin-dlg-maxw);
+    width:92vw;
+    max-height:85vh;
+    overflow:auto;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+  }
+  dialog::backdrop{ background: rgba(0,0,0,.25); }
+  .dlg-title{font-weight:1000; margin:0 0 8px 0;}
+  .dlg-grid{
+    width:auto;
+    min-width:var(--admin-dlg-table-minw);
+    margin:0 auto;
+    border-collapse:collapse;
+    font-size:13px;
+    table-layout:auto;
+  }
+  .dlg-grid th,.dlg-grid td{
+    border:1px solid var(--line);
+    padding:6px 8px;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .dlg-grid th{background:var(--head); font-weight:1000;}
+  .dlg-grid th:first-child,.dlg-grid td:first-child{ width:60%; }
+  .dlg-grid th:last-child,.dlg-grid td:last-child{ width:40%; }
+  dialog .spinNum{ width:64px; padding:4px 6px; font-size:13px; border-radius:10px; }
+
+  /* =========================
+     ✅ 관리자 패널(우측 최상단)
+     - 티커/상단바에 가리지 않도록 top 내림 + z-index 상승
+  ========================= */
+  .admin-fab{ position:fixed; top:96px; right:14px; z-index:10001; }
+  #adminBtn{
+    padding:8px 14px;
+    font-size:13px;
+    border-radius:999px;
+    background:#111827;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+  }
+  .admin-panel{
+    position:absolute;
+    top:44px;
+    right:0;
+    width:360px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+  }
+  .admin-panel[hidden]{ display:none; }
+  .admin-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; font-weight:1000; }
+  .admin-grid{ display:grid; grid-template-columns:1fr; gap:8px; }
+  .admin-grid label{ display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:1000; }
+  .admin-actions{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .lock-badge{
+    font-size:12px; font-weight:1000;
+    padding:4px 8px;
+    border-radius:999px;
+    background:#fee2e2;
+    border:1px solid #fecaca;
+    color:#7f1d1d;
+  }
+  .lock-badge.open{ background:#dcfce7; border:1px solid #bbf7d0; color:#14532d; }
+
+  /* ✅ 대시보드 영역 잠금(기존 효과 유지) */
+  #dashRoot.locked{ filter: grayscale(.15); }
+  #dashRoot.locked input,
+  #dashRoot.locked select,
+  #dashRoot.locked button{ pointer-events:none; opacity:.60; }
+
+  /* ✅ 포털 전체 잠금(관리자 버튼/패널은 예외) */
+  body.appLocked .content,
+  body.appLocked .topbar{
+    pointer-events:none;
+    opacity:.65;
+  }
+  body.appLocked .admin-fab,
+  body.appLocked .admin-fab *{
+    pointer-events:auto !important;
+    opacity:1 !important;
+  }
+
+  /* =========================================================
+     ✅ 모바일 공통(900px 이하)
+  ========================================================= */
+  @media (max-width: 900px){
+    body{ overflow:auto; }
+
+    .wrap{
+      height:auto;
+      min-height:calc(100svh - 54px - 34px);
+      max-width:none;
+      margin:0;
+      padding:6px;
+      gap:8px;
+    }
+
+    h1{ font-size:18px; }
+
+    button, select, input{
+      font-size:13px;
+      padding:7px 10px;
+      border-radius:10px;
+    }
+    .hint{ font-size:11px; }
+
+    .chart{
+      max-height:42vh;
+      grid-auto-columns: minmax(110px, 1fr);
+      padding:8px;
+      gap:8px;
+    }
+    .vbar{ height:150px; }
+
+    .tablewrap{
+      flex:none;
+      zoom:1;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      height:auto;
+    }
+    table{
+      min-width:980px;
+      font-size:12.5px;
+    }
+
+    dialog{
+      width:94vw;
+      max-width:none;
+      max-height:90vh;
+      padding:12px;
+    }
+    .dlg-grid{
+      width:100%;
+      min-width:0;
+      margin:0;
+      font-size:14px;
+      table-layout:auto;
+    }
+
+    .admin-fab{ top:96px; right:10px; }
+    .drawer{ width:84vw; max-width:320px; }
+  }
+
+  @media (max-width: 900px) and (orientation: portrait){
+    .wrap{ padding:4px; gap:6px; }
+    .chart{ max-height:46vh; }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ✅ 상단바 -->
+<div class="topbar">
+  <button class="menuBtn" id="menuBtn" type="button">☰</button>
+  <div class="brand">
+    <div class="t1" id="topTitle">안전성평가제</div>
+    <div class="t2" id="topSub">좌측 메뉴에서 화면 전환</div>
+  </div>
+</div>
+
+<!-- ✅ 티커(공지 1줄) -->
+<div class="ticker">
+  <div class="label">공지</div>
+  <div class="text" id="tickerText">데이터는 브라우저(localStorage)에 저장됩니다. 관리자에서 전체 잠금 가능</div>
+</div>
+
+<!-- ✅ 드로어 -->
+<div class="drawerOverlay" id="drawerOverlay"></div>
+<nav class="drawer" id="drawer">
+  <div class="drawerHead">
+    <div class="drawerTitle">메뉴</div>
+    <div class="drawerSub">원하는 화면을 선택하세요</div>
+  </div>
+  <div class="drawerBody">
+    <button class="navBtn active" data-page="dashboard" type="button">
+      <span>안전성평가제(대시보드)</span><span class="navHint">점수/그래프</span>
+    </button>
+    <button class="navBtn" data-page="rules" type="button">
+      <span>안전수칙</span><span class="navHint">필수 수칙</span>
+    </button>
+    <button class="navBtn" data-page="notice" type="button">
+      <span>공지/알림</span><span class="navHint">전파/공지</span>
+    </button>
+    <button class="navBtn" data-page="edu" type="button">
+      <span>안전교육</span><span class="navHint">교육자료</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ✅ 콘텐츠 -->
+<div class="content">
+  <div class="contentInner">
+
+    <!-- =========================
+         ✅ PAGE 1: 대시보드
+    ========================== -->
+    <div class="page active" id="page-dashboard">
+      <div id="dashRoot">
+        <div class="wrap">
+          <h1>안전성평가제</h1>
+
+          <div class="card top">
+            <span style="font-weight:1000;">기준차량수(가중치용)</span>
+            <input id="baseVehicles" class="spinNum" type="number" min="1" step="1" style="width:110px;" />
+
+            <span style="font-weight:1000;">연도</span>
+            <select id="yearSel"></select>
+
+            <button class="btn-primary" id="resetBtn" type="button">초기화(선택 연도)</button>
+            <button class="btn-primary" id="excelBtn" type="button">엑셀 다운로드</button>
+
+            <span class="hint">
+              색상: <b style="color:var(--good);">90↑(초록)</b> /
+              <b style="color:var(--mid);">80~89(노랑)</b> /
+              <b style="color:var(--low);">80↓(빨강)</b>
+            </span>
+          </div>
+
+          <div class="main">
+            <!-- 그래프 위 -->
+            <div class="card chartcard">
+              <div class="charthead">
+                <div class="charttitle">팀별 안전점수</div>
+                <div class="hint">※ 점수 높은 순으로 정렬</div>
+              </div>
+              <div id="chart" class="chart"></div>
+            </div>
+
+            <!-- 표 아래 -->
+            <div class="card tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:7%;">구분</th>
+                    <th style="width:7%;">차량</th>
+                    <th style="width:4%;">가중치</th>
+
+                    <th style="width:8%;">작업사고<br><span class="hint">(-40)</span></th>
+                    <th style="width:8%;">차량사고<br><span class="hint">(과실비율)</span></th>
+
+                    <th style="width:8%;">속도위반<br><span class="hint">(-1)</span></th>
+                    <th style="width:8%;">신호위반<br><span class="hint">(-1)</span></th>
+                    <th style="width:8%;">통행구분<br><span class="hint">(-1)</span></th>
+
+                    <th style="width:8%;">안전점검 미준수<br><span class="hint">(-3)</span></th>
+                    <th style="width:8%;">우수제안<br><span class="hint">(+3)</span></th>
+                    <th style="width:8%;">우수활동<br><span class="hint">(+3)</span></th>
+
+                    <th style="width:10%;">점수</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+              <div class="hint" style="margin-top:6px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================
+         ✅ PAGE 2: 안전수칙
+    ========================== -->
+    <div class="page" id="page-rules">
+      <div class="wrap">
+        <div class="pageTitle">
+          <h2>안전수칙</h2>
+          <div class="hint">현장 필수 수칙을 등록/관리</div>
+        </div>
+
+        <div class="card">
+          <div class="formRow">
+            <input id="rulesTitle" type="text" placeholder="제목 (예: 작업 전 TBM 실시)" />
+            <button class="btn-primary" id="rulesAddBtn" type="button">추가</button>
+            <button id="rulesClearAllBtn" type="button">전체삭제</button>
+          </div>
+          <div style="margin-top:8px;">
+            <textarea id="rulesBody" placeholder="내용을 입력하세요 (예: 작업 전 위험요인 3가지를 확인하고 공유한다.)"></textarea>
+          </div>
+          <div class="hint" style="margin-top:6px;">
+            ※ 데이터는 브라우저에 저장됩니다. (관리자에서 전체 잠금 가능)
+          </div>
+        </div>
+
+        <div class="list" id="rulesList"></div>
+      </div>
+    </div>
+
+    <!-- =========================
+         ✅ PAGE 3: 공지/알림
+    ========================== -->
+    <div class="page" id="page-notice">
+      <div class="wrap">
+        <div class="pageTitle">
+          <h2>공지/알림</h2>
+          <div class="hint">전파/공지 사항 등록</div>
+        </div>
+
+        <div class="card">
+          <div class="formRow">
+            <input id="noticeTitle" type="text" placeholder="제목 (예: 1월 안전점검 계획 안내)" />
+            <button class="btn-primary" id="noticeAddBtn" type="button">추가</button>
+            <button id="noticeClearAllBtn" type="button">전체삭제</button>
+          </div>
+          <div style="margin-top:8px;">
+            <textarea id="noticeBody" placeholder="공지 내용을 입력하세요"></textarea>
+          </div>
+          <div class="hint" style="margin-top:6px;">
+            ※ 최신 공지 1건은 상단 티커에 자동 표시됩니다.
+          </div>
+        </div>
+
+        <div class="list" id="noticeList"></div>
+      </div>
+    </div>
+
+    <!-- =========================
+         ✅ PAGE 4: 안전교육
+    ========================== -->
+    <div class="page" id="page-edu">
+      <div class="wrap">
+        <div class="pageTitle">
+          <h2>안전교육</h2>
+          <div class="hint">교육자료/공지 등록</div>
+        </div>
+
+        <div class="card">
+          <div class="formRow">
+            <input id="eduTitle" type="text" placeholder="제목 (예: 추락/낙하 예방 교육)" />
+            <button class="btn-primary" id="eduAddBtn" type="button">추가</button>
+            <button id="eduClearAllBtn" type="button">전체삭제</button>
+          </div>
+          <div style="margin-top:8px;">
+            <textarea id="eduBody" placeholder="교육 내용을 입력하세요 (링크/요약/교육일정 등)"></textarea>
+          </div>
+        </div>
+
+        <div class="list" id="eduList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ✅ 차량사고 입력 모달 -->
+<dialog id="accidentDialog">
+  <form method="dialog">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div class="dlg-title" id="dlgTitle">차량사고(비율) 구간별 건수 입력</div>
+      <button type="submit">닫기</button>
+    </div>
+    <div class="hint" id="dlgHint" style="margin:6px 0 10px;"></div>
+
+    <table class="dlg-grid">
+      <thead><tr><th>구간</th><th>건수</th></tr></thead>
+      <tbody id="dlgBody"></tbody>
+    </table>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+      <div class="hint">※ ▲▼ 또는 직접 입력 시 즉시 반영</div>
+      <button type="button" class="btn-primary" id="dlgClearBtn">사고 입력값 초기화</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ✅ 관리자 패널 -->
+<div class="admin-fab">
+  <button id="adminBtn" type="button">관리자</button>
+
+  <div id="adminPanel" class="admin-panel" hidden>
+    <div class="admin-head">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div>관리자 설정</div>
+        <span id="lockBadge" class="lock-badge">LOCK</span>
+      </div>
+      <button type="button" id="adminCloseBtn">✕</button>
+    </div>
+
+    <div class="admin-grid">
+      <label>표 줌(데스크톱)
+        <input id="adminZoom" type="number" step="0.01" min="0.60" max="1.20">
+      </label>
+
+      <label>그래프 최소높이(px)
+        <input id="adminChartMinH" type="number" step="10" min="140" max="800">
+      </label>
+
+      <label>모달 최대폭(px)
+        <input id="adminDlgMaxW" type="number" step="10" min="320" max="900">
+      </label>
+
+      <label>모달 표 최소폭(px)
+        <input id="adminDlgTableMinW" type="number" step="10" min="0" max="900">
+      </label>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" class="btn-primary" id="adminSaveBtn">저장</button>
+      <button type="button" id="adminResetBtn">초기화</button>
+      <button type="button" id="adminLockBtn">전체 잠금</button>
+      <button type="button" id="adminUnlockBtn">잠금해제</button>
+    </div>
+
+    <div class="hint" style="margin-top:8px;">
+      ※ <b>전체 잠금</b> 상태에서는 포털의 모든 입력/버튼이 비활성화됩니다.<br>
+      ※ PIN 변경: 코드의 <b>ADMIN_PIN</b> 값 수정
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   ✅ 공통 유틸
+========================= */
+function safeParse(s, fallback){ try{ return s ? JSON.parse(s) : fallback; }catch{ return fallback; } }
+function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+function toInt(v){ const n = Number(v); return isFinite(n) ? Math.trunc(n) : 0; }
+function nowKSTString(){
+  // 브라우저 로컬 기준 표기(요청상 정확한 타임존 강제는 생략)
+  const d = new Date();
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mi = String(d.getMinutes()).padStart(2,"0");
+  return `${yy}-${mm}-${dd} ${hh}:${mi}`;
+}
+function escapeHtml(s){
+  return String(s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+/* =========================
+   ✅ 메뉴(드로어) + 페이지 전환
+========================= */
+const menuBtn = document.getElementById("menuBtn");
+const drawer = document.getElementById("drawer");
+const drawerOverlay = document.getElementById("drawerOverlay");
+const navBtns = Array.from(document.querySelectorAll(".navBtn"));
+const topTitle = document.getElementById("topTitle");
+const topSub = document.getElementById("topSub");
+
+function openDrawer(){
+  drawer.classList.add("open");
+  drawerOverlay.classList.add("open");
+}
+function closeDrawer(){
+  drawer.classList.remove("open");
+  drawerOverlay.classList.remove("open");
+}
+menuBtn.addEventListener("click", () => {
+  if(drawer.classList.contains("open")) closeDrawer();
+  else openDrawer();
+});
+drawerOverlay.addEventListener("click", closeDrawer);
+
+function setActivePage(pageId){
+  if(isAppLocked()){
+    alert("전체 잠금 상태입니다. 관리자에서 잠금해제 후 이용하세요.");
+    return;
+  }
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + pageId).classList.add("active");
+
+  navBtns.forEach(b => b.classList.toggle("active", b.dataset.page === pageId));
+  closeDrawer();
+
+  const titleMap = {
+    dashboard: ["안전성평가제", "점수/그래프 확인"],
+    rules: ["안전수칙", "필수 수칙 등록/관리"],
+    notice: ["공지/알림", "전파/공지 등록"],
+    edu: ["안전교육", "교육자료 등록/관리"],
+  };
+  topTitle.textContent = titleMap[pageId]?.[0] ?? "안전성평가제";
+  topSub.textContent = titleMap[pageId]?.[1] ?? "좌측 메뉴에서 화면 전환";
+}
+navBtns.forEach(btn => btn.addEventListener("click", () => setActivePage(btn.dataset.page)));
+
+/* =========================
+   ✅ 포털 콘텐츠(안전수칙/공지/교육)
+========================= */
+const RULES_KEY  = "PORTAL_RULES_V1";
+const NOTICE_KEY = "PORTAL_NOTICE_V1";
+const EDU_KEY    = "PORTAL_EDU_V1";
+
+let rulesStore  = safeParse(localStorage.getItem(RULES_KEY), []);
+let noticeStore = safeParse(localStorage.getItem(NOTICE_KEY), []);
+let eduStore    = safeParse(localStorage.getItem(EDU_KEY), []);
+
+function savePortal(){
+  localStorage.setItem(RULES_KEY, JSON.stringify(rulesStore));
+  localStorage.setItem(NOTICE_KEY, JSON.stringify(noticeStore));
+  localStorage.setItem(EDU_KEY, JSON.stringify(eduStore));
+}
+
+const tickerText = document.getElementById("tickerText");
+function syncTicker(){
+  if(noticeStore.length > 0){
+    const latest = noticeStore[0];
+    tickerText.textContent = `[${latest.title}] ${latest.body}`.slice(0, 120);
+  }else{
+    tickerText.textContent = "데이터는 브라우저(localStorage)에 저장됩니다. 관리자에서 전체 잠금 가능";
+  }
+}
+
+function renderList(listEl, items, onDelete){
+  listEl.innerHTML = "";
+  if(items.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "hint";
+    empty.textContent = "등록된 항목이 없습니다.";
+    listEl.appendChild(empty);
+    return;
+  }
+  items.forEach((it, idx) => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="title">${escapeHtml(it.title)}</div>
+      <div class="meta">등록: ${escapeHtml(it.ts)}</div>
+      <div class="body">${escapeHtml(it.body)}</div>
+      <div class="itemActions">
+        <button type="button" class="btn-primary" data-del="${idx}">삭제</button>
+      </div>
+    `;
+    div.querySelector("[data-del]").addEventListener("click", () => {
+      if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+      onDelete(idx);
+    });
+    listEl.appendChild(div);
+  });
+}
+
+/* 안전수칙 */
+const rulesTitle = document.getElementById("rulesTitle");
+const rulesBody  = document.getElementById("rulesBody");
+const rulesAddBtn = document.getElementById("rulesAddBtn");
+const rulesClearAllBtn = document.getElementById("rulesClearAllBtn");
+const rulesList = document.getElementById("rulesList");
+
+rulesAddBtn.addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+  const t = rulesTitle.value.trim();
+  const b = rulesBody.value.trim();
+  if(!t || !b) return alert("제목/내용을 입력하세요.");
+  rulesStore.unshift({ title:t, body:b, ts: nowKSTString() });
+  rulesTitle.value = "";
+  rulesBody.value = "";
+  savePortal();
+  renderPortal();
+});
+rulesClearAllBtn.addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+  if(!confirm("안전수칙 전체삭제 할까요?")) return;
+  rulesStore = [];
+  savePortal();
+  renderPortal();
+});
+
+/* 공지/알림 */
+const noticeTitle = document.getElementById("noticeTitle");
+const noticeBody  = document.getElementById("noticeBody");
+const noticeAddBtn = document.getElementById("noticeAddBtn");
+const noticeClearAllBtn = document.getElementById("noticeClearAllBtn");
+const noticeList = document.getElementById("noticeList");
+
+noticeAddBtn.addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+  const t = noticeTitle.value.trim();
+  const b = noticeBody.value.trim();
+  if(!t || !b) return alert("제목/내용을 입력하세요.");
+  noticeStore.unshift({ title:t, body:b, ts: nowKSTString() });
+  noticeTitle.value = "";
+  noticeBody.value = "";
+  savePortal();
+  renderPortal();
+});
+noticeClearAllBtn.addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+  if(!confirm("공지/알림 전체삭제 할까요?")) return;
+  noticeStore = [];
+  savePortal();
+  renderPortal();
+});
+
+/* 안전교육 */
+const eduTitle = document.getElementById("eduTitle");
+const eduBody  = document.getElementById("eduBody");
+const eduAddBtn = document.getElementById("eduAddBtn");
+const eduClearAllBtn = document.getElementById("eduClearAllBtn");
+const eduList = document.getElementById("eduList");
+
+eduAddBtn.addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+  const t = eduTitle.value.trim();
+  const b = eduBody.value.trim();
+  if(!t || !b) return alert("제목/내용을 입력하세요.");
+  eduStore.unshift({ title:t, body:b, ts: nowKSTString() });
+  eduTitle.value = "";
+  eduBody.value = "";
+  savePortal();
+  renderPortal();
+});
+eduClearAllBtn.addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태입니다.");
+  if(!confirm("안전교육 전체삭제 할까요?")) return;
+  eduStore = [];
+  savePortal();
+  renderPortal();
+});
+
+function renderPortal(){
+  renderList(rulesList, rulesStore, (idx)=>{ rulesStore.splice(idx,1); savePortal(); renderPortal(); });
+  renderList(noticeList, noticeStore, (idx)=>{ noticeStore.splice(idx,1); savePortal(); renderPortal(); });
+  renderList(eduList, eduStore, (idx)=>{ eduStore.splice(idx,1); savePortal(); renderPortal(); });
+  syncTicker();
+}
+
+/* =========================
+   ✅ 대시보드(안전성평가제)
+========================= */
+const RULES = {
+  baseScore: 100,
+  workAccident: -40,
+  fines: { speed:-1, signal:-1, lane:-1 },
+  inspectionMiss: -3,
+  suggestion: +3,
+  activity: +3,
+  vehicleAccidentBands: [
+    { key:"p50_59", label:"50%~59%", point:-5 },
+    { key:"p60_69", label:"60%~69%", point:-6 },
+    { key:"p70_79", label:"70%~79%", point:-7 },
+    { key:"p80_89", label:"80%~89%", point:-8 },
+    { key:"p90_99", label:"90%~99%", point:-9 },
+    { key:"p100",   label:"100%",    point:-10 }
+  ]
+};
+
+const DATA_KEY  = "SAFETY_DASH_DATA_V5";
+const UI_KEY    = "SAFETY_DASH_UI_V3";
+
+const ADMIN_KEY = "SAFETY_ADMIN_SETTINGS_V1";
+const ADMIN_LOCK_KEY = "SAFETY_ADMIN_LOCK_V2";
+const ADMIN_PIN = "2026";
+
+/* ✅ 팀명 축약 표시(그래프에서만 적용)
+   - 원래 이름은 데이터 그대로 유지 (표/모달/엑셀은 원본)
+*/
+const TEAM_LABELS = {
+  "동대구운용팀": "동대구",
+  "서대구운용팀": "서대구",
+  "남대구운용팀": "남대구",
+  "포항운용팀": "포항",
+  "안동운용팀": "안동",
+  "구미운용팀": "구미",
+  "문경운용팀": "문경"
+};
+function shortTeamName(name){ return TEAM_LABELS[name] || name; }
+
+const TEAM_DEFAULTS = [
+  { name:"동대구운용팀", vehicles:20 },
+  { name:"서대구운용팀", vehicles:16 },
+  { name:"남대구운용팀", vehicles:16 },
+  { name:"포항운용팀", vehicles:19 },
+  { name:"안동운용팀", vehicles:15 },
+  { name:"구미운용팀", vehicles:13 },
+  { name:"문경운용팀", vehicles:8  }
+];
+
+const YEAR_OPTIONS = ["2024","2025","2026"];
+
+let store = safeParse(localStorage.getItem(DATA_KEY), {});
+let ui    = safeParse(localStorage.getItem(UI_KEY), { baseVehicles: 15, year: "2026" });
+
+const dashRoot = document.getElementById("dashRoot");
+
+const baseVehiclesEl = document.getElementById("baseVehicles");
+const yearSel = document.getElementById("yearSel");
+const tbody = document.getElementById("tbody");
+const chart = document.getElementById("chart");
+
+const dlg = document.getElementById("accidentDialog");
+const dlgTitle = document.getElementById("dlgTitle");
+const dlgHint = document.getElementById("dlgHint");
+const dlgBody = document.getElementById("dlgBody");
+const dlgClearBtn = document.getElementById("dlgClearBtn");
+let editingIndex = null;
+
+function weightFor(vehicles, baseVehicles){
+  const v = Number(vehicles);
+  const b = Number(baseVehicles);
+  if(!isFinite(v) || v<=0 || !isFinite(b) || b<=0) return 1;
+  return Math.round((b / v) * 100) / 100;
+}
+function scoreClass(score){ return (score >= 90) ? "good" : (score >= 80) ? "mid" : "low"; }
+function warnClass(score){ return (score < 80) ? "warn-low" : (score < 90) ? "warn-mid" : ""; }
+
+function sumVehicleAcc(row){
+  let s = 0;
+  for(const b of RULES.vehicleAccidentBands) s += toInt(row.vehicleAccident[b.key] || 0);
+  return s;
+}
+
+/* ✅ 가중치 적용(차량사고/과태료) */
+function weightedPoints(row){
+  let sum = 0;
+  for(const b of RULES.vehicleAccidentBands){
+    sum += toInt(row.vehicleAccident[b.key] || 0) * b.point;
+  }
+  sum += toInt(row.fines.speed)  * RULES.fines.speed;
+  sum += toInt(row.fines.signal) * RULES.fines.signal;
+  sum += toInt(row.fines.lane)   * RULES.fines.lane;
+  return sum;
+}
+/* ✅ 가중치 미적용(작업사고/점검/우수제안/우수활동) */
+function unweightedPoints(row){
+  let sum = 0;
+  sum += toInt(row.workAccident) * RULES.workAccident;
+  sum += toInt(row.inspectionMiss) * RULES.inspectionMiss;
+  sum += toInt(row.goodSuggestion) * RULES.suggestion;
+  sum += toInt(row.goodActivity) * RULES.activity;
+  return sum;
+}
+
+function finalScore(row, baseVehicles){
+  const w = weightFor(row.vehicles, baseVehicles);
+  const total = RULES.baseScore + (weightedPoints(row) * w) + unweightedPoints(row);
+  return clamp(Math.round(total * 100) / 100, 0, 100);
+}
+
+/* ✅ 100점이면 깜빡 X, 감점(100점 미만)만 깜빡 */
+function shouldBlink(score){ return score < 100; }
+
+/* =========================
+   ✅ 포털 전체 잠금
+========================= */
+function isAppLocked(){ return localStorage.getItem(ADMIN_LOCK_KEY) === "1"; }
+
+function setAppLocked(v){
+  localStorage.setItem(ADMIN_LOCK_KEY, v ? "1" : "0");
+  syncAppLockUI();
+}
+
+function syncAppLockUI(){
+  const locked = isAppLocked();
+  document.body.classList.toggle("appLocked", locked);
+  dashRoot.classList.toggle("locked", locked);
+  if(locked && dlg.open) dlg.close();
+}
+
+/* =========================
+   ✅ 데이터 관리
+========================= */
+function ensureYear(year){
+  if(!store[year]){
+    store[year] = TEAM_DEFAULTS.map(t => mkRow(t.name, t.vehicles));
+  }else{
+    for(const t of TEAM_DEFAULTS){
+      if(!store[year].some(r => r.name === t.name)){
+        store[year].push(mkRow(t.name, t.vehicles));
+      }
+    }
+    store[year].sort((a,b)=>
+      TEAM_DEFAULTS.findIndex(t=>t.name===a.name) - TEAM_DEFAULTS.findIndex(t=>t.name===b.name)
+    );
+  }
+}
+function mkRow(name, vehicles){
+  return {
+    id: (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
+    name,
+    vehicles: toInt(vehicles),
+    workAccident: 0,
+    vehicleAccident: Object.fromEntries(RULES.vehicleAccidentBands.map(b => [b.key, 0])),
+    fines: { speed:0, signal:0, lane:0 },
+    inspectionMiss: 0,
+    goodSuggestion: 0,
+    goodActivity: 0
+  };
+}
+function saveAll(){
+  localStorage.setItem(DATA_KEY, JSON.stringify(store));
+  localStorage.setItem(UI_KEY, JSON.stringify(ui));
+}
+
+/* ===== 입력 HTML ===== */
+function numHtml({year, idx, field, value, min=0, step=1, small=true}){
+  const cls = small ? "spinNum sm" : "spinNum";
+  return `
+    <input class="${cls}" type="number" inputmode="numeric"
+      min="${min}" step="${step}" value="${value}"
+      oninput="setValue('${year}', ${idx}, '${field}', this.value, ${min});">
+  `;
+}
+
+window.setValue = function(year, idx, field, val, min){
+  if(isAppLocked()) return;
+  ensureYear(year);
+  const row = store[year][idx];
+  const next = Math.max(min, toInt(val));
+  setField(row, field, next);
+  saveAll();
+  render();
+};
+
+function setField(obj, path, value){
+  const parts = path.split(".");
+  let cur = obj;
+  for(let i=0; i<parts.length-1; i++){
+    const p = parts[i];
+    if(cur[p] == null) cur[p] = {};
+    cur = cur[p];
+  }
+  cur[parts[parts.length-1]] = value;
+}
+
+/* ===== 사고 모달 ===== */
+window.openAccidentDialog = function(idx){
+  if(isAppLocked()) return;
+  const year = yearSel.value;
+  ensureYear(year);
+  editingIndex = idx;
+  const row = store[year][idx];
+
+  dlgTitle.textContent = "차량사고(비율) 구간별 건수 입력";
+  dlgHint.textContent = `대상: ${row.name} (합계 ${sumVehicleAcc(row)}건)`;
+
+  dlgBody.innerHTML = "";
+  RULES.vehicleAccidentBands.forEach((b) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-weight:1000;">${b.label} <span class="hint">(${b.point})</span></td>
+      <td>
+        <input class="spinNum" type="number" inputmode="numeric"
+          min="0" step="1"
+          value="${toInt(row.vehicleAccident[b.key] || 0)}"
+          oninput="setValue('${year}', ${idx}, 'vehicleAccident.${b.key}', this.value, 0)">
+      </td>
+    `;
+    dlgBody.appendChild(tr);
+  });
+
+  dlg.showModal();
+};
+
+dlgClearBtn.addEventListener("click", () => {
+  if(isAppLocked()) return;
+  const year = yearSel.value;
+  if(editingIndex == null) return;
+  ensureYear(year);
+  const row = store[year][editingIndex];
+  for(const b of RULES.vehicleAccidentBands) row.vehicleAccident[b.key] = 0;
+  saveAll();
+  window.openAccidentDialog(editingIndex);
+  render();
+});
+
+/* ===== 렌더 ===== */
+function render(){
+  const year = yearSel.value;
+  ui.year = year;
+  ui.baseVehicles = toInt(baseVehiclesEl.value || 15);
+
+  ensureYear(year);
+
+  const baseVehicles = ui.baseVehicles;
+  const rows = store[year];
+
+  /* ===== 표 ===== */
+  tbody.innerHTML = "";
+  rows.forEach((row, idx) => {
+    const w = weightFor(row.vehicles, baseVehicles);
+    const score = finalScore(row, baseVehicles);
+    const sc = scoreClass(score);
+    const wc = warnClass(score);
+    const blink = shouldBlink(score) ? "blink" : "";
+
+    const tr = document.createElement("tr");
+    tr.className = `${wc} ${blink}`;
+    tr.innerHTML = `
+      <td class="left">${row.name}</td>
+
+      <td>${numHtml({year, idx, field:"vehicles", value:toInt(row.vehicles), min:1, step:1, small:true})}</td>
+      <td style="font-weight:1000; color:var(--muted);">${w.toFixed(2)}</td>
+
+      <td>${numHtml({year, idx, field:"workAccident", value:toInt(row.workAccident), min:0, step:1, small:true})}</td>
+
+      <td>
+        <button type="button" class="btn-primary" onclick="openAccidentDialog(${idx})">비율 입력</button>
+        <div class="hint" style="margin-top:4px; font-weight:1000;">합계 ${sumVehicleAcc(row)}건</div>
+      </td>
+
+      <td>${numHtml({year, idx, field:"fines.speed",  value:toInt(row.fines.speed),  min:0, step:1, small:true})}</td>
+      <td>${numHtml({year, idx, field:"fines.signal", value:toInt(row.fines.signal), min:0, step:1, small:true})}</td>
+      <td>${numHtml({year, idx, field:"fines.lane",   value:toInt(row.fines.lane),   min:0, step:1, small:true})}</td>
+
+      <td>${numHtml({year, idx, field:"inspectionMiss", value:toInt(row.inspectionMiss), min:0, step:1, small:true})}</td>
+
+      <td>${numHtml({year, idx, field:"goodSuggestion", value:toInt(row.goodSuggestion), min:0, step:1, small:true})}</td>
+      <td>${numHtml({year, idx, field:"goodActivity",   value:toInt(row.goodActivity),   min:0, step:1, small:true})}</td>
+
+      <td class="score ${sc}">${score.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  /* ===== 그래프(세로 막대) ===== */
+  chart.innerHTML = "";
+  const sorted = [...rows].sort((a,b)=> finalScore(b, baseVehicles) - finalScore(a, baseVehicles));
+
+  sorted.forEach((row, i) => {
+    const score = finalScore(row, baseVehicles);
+    const sc = scoreClass(score);
+    const blink = shouldBlink(score) ? "blink" : "";
+
+    let maxHist = 0;
+    for(const y of YEAR_OPTIONS){
+      if(!store[y]) continue;
+      const rr = store[y].find(t => t.name === row.name);
+      if(!rr) continue;
+      maxHist = Math.max(maxHist, finalScore(rr, baseVehicles));
+    }
+
+    const shortName = shortTeamName(row.name);
+
+    const div = document.createElement("div");
+    div.className = `vcol ${blink}`;
+    div.innerHTML = `
+      <div class="vmeta">
+        <div class="vrank">${i+1}</div>
+        <div class="vname" title="${row.name}">${shortName}</div>
+      </div>
+
+      <div class="vbar" aria-label="점수 세로막대">
+        <div class="vmax" style="height:${maxHist}%;"></div>
+        <div class="vnow ${sc}" style="height:${score}%;"></div>
+      </div>
+
+      <div class="vscore">${score.toFixed(2)}</div>
+    `;
+    chart.appendChild(div);
+  });
+
+  saveAll();
+}
+
+/* ===== 엑셀 다운로드 ===== */
+document.getElementById("excelBtn").addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태에서는 다운로드할 수 없습니다.");
+  const year = yearSel.value;
+  ensureYear(year);
+
+  const baseVehicles = toInt(baseVehiclesEl.value || 15);
+  const rows = store[year];
+
+  const headers = [
+    "연도","구분","차량수","가중치",
+    "작업사고(건)","차량사고(비율)합계(건)",
+    "차량사고_50~59","차량사고_60~69","차량사고_70~79","차량사고_80~89","차량사고_90~99","차량사고_100",
+    "과태료_속도","과태료_신호","과태료_통행",
+    "안전점검_미이행(건)","우수제안(건)","우수활동(건)",
+    "안전점수"
+  ];
+
+  const lines = [];
+  lines.push(headers.join(","));
+
+  for(const r of rows){
+    const w = weightFor(r.vehicles, baseVehicles);
+    const score = finalScore(r, baseVehicles);
+
+    const row = [
+      csvEscape(year),
+      csvEscape(r.name),
+      toInt(r.vehicles),
+      w.toFixed(2),
+      toInt(r.workAccident),
+      sumVehicleAcc(r),
+
+      toInt(r.vehicleAccident.p50_59 || 0),
+      toInt(r.vehicleAccident.p60_69 || 0),
+      toInt(r.vehicleAccident.p70_79 || 0),
+      toInt(r.vehicleAccident.p80_89 || 0),
+      toInt(r.vehicleAccident.p90_99 || 0),
+      toInt(r.vehicleAccident.p100   || 0),
+
+      toInt(r.fines.speed),
+      toInt(r.fines.signal),
+      toInt(r.fines.lane),
+
+      toInt(r.inspectionMiss),
+      toInt(r.goodSuggestion),
+      toInt(r.goodActivity),
+
+      score.toFixed(2)
+    ];
+    lines.push(row.join(","));
+  }
+
+  const csv = "\uFEFF" + lines.join("\r\n");
+  const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,"0");
+  const d = String(now.getDate()).padStart(2,"0");
+  const fileName = `안전성평가_${year}_${y}${m}${d}.csv`;
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+});
+
+function csvEscape(v){
+  const s = String(v ?? "");
+  return /[",\r\n]/.test(s) ? `"${s.replaceAll('"','""')}"` : s;
+}
+
+/* ===== 초기화 ===== */
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if(isAppLocked()) return alert("전체 잠금 상태에서는 초기화할 수 없습니다.");
+  const year = yearSel.value;
+  store[year] = TEAM_DEFAULTS.map(t => mkRow(t.name, t.vehicles));
+  saveAll();
+  render();
+});
+
+/* ===== UI 초기화 ===== */
+function initUI(){
+  YEAR_OPTIONS.forEach(y=>{
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    yearSel.appendChild(opt);
+  });
+
+  baseVehiclesEl.value = ui.baseVehicles ?? 15;
+  yearSel.value = ui.year ?? "2026";
+
+  YEAR_OPTIONS.forEach(ensureYear);
+
+  yearSel.addEventListener("change", () => {
+    if(isAppLocked()) return;
+    render();
+  });
+
+  baseVehiclesEl.addEventListener("input", () => {
+    if(isAppLocked()) return;
+    ui.baseVehicles = toInt(baseVehiclesEl.value || 15);
+    saveAll();
+    render();
+  });
+}
+initUI();
+
+/* =========================
+   ✅ 관리자 설정(줌/모달/그래프 높이) + 잠금
+========================= */
+const adminBtn = document.getElementById("adminBtn");
+const adminPanel = document.getElementById("adminPanel");
+const adminCloseBtn = document.getElementById("adminCloseBtn");
+const adminSaveBtn = document.getElementById("adminSaveBtn");
+const adminResetBtn = document.getElementById("adminResetBtn");
+const adminLockBtn = document.getElementById("adminLockBtn");
+const adminUnlockBtn = document.getElementById("adminUnlockBtn");
+const lockBadge = document.getElementById("lockBadge");
+
+const adminZoom = document.getElementById("adminZoom");
+const adminChartMinH = document.getElementById("adminChartMinH");
+const adminDlgMaxW = document.getElementById("adminDlgMaxW");
+const adminDlgTableMinW = document.getElementById("adminDlgTableMinW");
+
+function adminDefaults(){
+  return { tableZoom:0.80, chartMinH:240, dlgMaxW:520, dlgTableMinW:420 };
+}
+function loadAdmin(){
+  const saved = safeParse(localStorage.getItem(ADMIN_KEY), null);
+  return { ...adminDefaults(), ...(saved || {}) };
+}
+function applyAdmin(cfg){
+  document.documentElement.style.setProperty("--admin-table-zoom", String(cfg.tableZoom));
+  document.documentElement.style.setProperty("--admin-chart-minh", cfg.chartMinH + "px");
+  document.documentElement.style.setProperty("--admin-dlg-maxw", cfg.dlgMaxW + "px");
+  document.documentElement.style.setProperty("--admin-dlg-table-minw", cfg.dlgTableMinW + "px");
+}
+function fillAdminInputs(cfg){
+  adminZoom.value = cfg.tableZoom;
+  adminChartMinH.value = cfg.chartMinH;
+  adminDlgMaxW.value = cfg.dlgMaxW;
+  adminDlgTableMinW.value = cfg.dlgTableMinW;
+}
+function syncAdminUI(){
+  const locked = isAppLocked();
+  lockBadge.textContent = locked ? "LOCK" : "OPEN";
+  lockBadge.classList.toggle("open", !locked);
+}
+
+applyAdmin(loadAdmin());
+syncAppLockUI();
+syncAdminUI();
+
+adminBtn.addEventListener("click", () => {
+  const pin = prompt("관리자 PIN을 입력하세요");
+  if(pin !== ADMIN_PIN){
+    alert("PIN이 올바르지 않습니다.");
+    return;
+  }
+  fillAdminInputs(loadAdmin());
+  adminPanel.hidden = false;
+  syncAdminUI();
+});
+
+adminCloseBtn.addEventListener("click", () => {
+  adminPanel.hidden = true;
+});
+
+adminSaveBtn.addEventListener("click", () => {
+  const next = {
+    tableZoom: Math.max(0.60, Math.min(1.20, Number(adminZoom.value || 0.8))),
+    chartMinH: Math.max(140, Math.min(800, Number(adminChartMinH.value || 240))),
+    dlgMaxW: Math.max(320, Math.min(900, Number(adminDlgMaxW.value || 520))),
+    dlgTableMinW: Math.max(0, Math.min(900, Number(adminDlgTableMinW.value || 420))),
+  };
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(next));
+  applyAdmin(next);
+  render();
+  alert("관리자 설정 저장 완료!");
+});
+
+adminResetBtn.addEventListener("click", () => {
+  const def = adminDefaults();
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(def));
+  applyAdmin(def);
+  fillAdminInputs(def);
+  render();
+  alert("관리자 설정 초기화 완료!");
+});
+
+/* ✅ 전체 잠금(포털 전체) */
+adminLockBtn.addEventListener("click", () => {
+  const pin = prompt("전체 잠금을 위해 관리자 PIN을 입력하세요");
+  if(pin !== ADMIN_PIN){
+    alert("PIN이 올바르지 않습니다.");
+    return;
+  }
+  setAppLocked(true);
+  syncAdminUI();
+  alert("전체 잠금 완료! 이제 포털 전체 입력을 수정할 수 없습니다.");
+});
+
+adminUnlockBtn.addEventListener("click", () => {
+  const pin = prompt("잠금해제를 위해 관리자 PIN을 입력하세요");
+  if(pin !== ADMIN_PIN){
+    alert("PIN이 올바르지 않습니다.");
+    return;
+  }
+  setAppLocked(false);
+  syncAdminUI();
+  alert("잠금해제 완료! 이제 포털 입력을 수정할 수 있습니다.");
+});
+
+/* =========================
+   ✅ 최초 렌더
+========================= */
+renderPortal();
+render();
+</script>
+
+</body>
+</html>
