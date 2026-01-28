@@ -110,37 +110,67 @@ export default function Dashboard() {
       ) : (
         <>
           {/* Chart Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-             <Card className="lg:col-span-2 shadow-lg border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" />
-                  팀별 성능 순위
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+             <Card className="lg:col-span-3 shadow-lg border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Trophy className="w-6 h-6 text-yellow-500" />
+                  팀별 안전 성능 순위
                 </CardTitle>
-                <CardDescription>실시간 안전 점수 분포</CardDescription>
+                <CardDescription>실시간 안전 점수 현황 (높을수록 우수)</CardDescription>
               </CardHeader>
-              <CardContent className="h-[350px]">
+              <CardContent className="h-[400px] pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sortedTeams} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <BarChart data={sortedTeams} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                     <XAxis 
                       dataKey="name" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} 
-                      dy={10}
+                      tick={{ fill: 'var(--foreground)', fontSize: 13, fontWeight: 600 }}
+                      interval={0}
                     />
                     <YAxis 
-                      hide 
                       domain={[0, 110]} 
+                      axisLine={false} 
+                      tickLine={false}
+                      tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
                     />
                     <Tooltip 
-                      cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                      cursor={{ fill: 'var(--primary)', opacity: 0.05 }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-background/95 backdrop-blur-md border shadow-xl p-4 rounded-xl">
+                              <p className="font-bold text-lg mb-2 border-b pb-1">{data.name}</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">안전 점수:</span>
+                                  <span className="font-bold text-primary">{data.totalScore}점</span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">차량 수:</span>
+                                  <span>{data.vehicleCount}대</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
-                    <Bar dataKey="totalScore" radius={[8, 8, 0, 0]} barSize={40} animationDuration={1000}>
+                    <Bar 
+                      dataKey="totalScore" 
+                      radius={[6, 6, 0, 0]}
+                      barSize={45}
+                    >
                       {sortedTeams.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={getScoreColor(entry.totalScore)} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.totalScore >= 90 ? '#10b981' : entry.totalScore >= 80 ? '#f59e0b' : '#ef4444'} 
+                          className="drop-shadow-sm"
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -148,30 +178,30 @@ export default function Dashboard() {
               </CardContent>
              </Card>
 
-             <Card className="shadow-lg border-border/50 flex flex-col justify-center">
+             <Card className="shadow-lg border-border/50 flex flex-col">
                <CardHeader>
-                 <CardTitle>점수 범례</CardTitle>
+                 <CardTitle className="text-lg">평가 기준</CardTitle>
                </CardHeader>
-               <CardContent className="space-y-4">
-                 <div className="flex items-center gap-4 p-4 rounded-xl bg-green-50 border border-green-100 dark:bg-green-900/10 dark:border-green-900/30">
-                   <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/30">A</div>
+               <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
+                 <div className="flex items-center gap-4 p-4 rounded-xl bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800">
+                   <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-green-500/20">A</div>
                    <div>
-                     <div className="font-bold text-green-700 dark:text-green-400">우수 (90+)</div>
-                     <div className="text-xs text-green-600/80">목표 달성</div>
+                     <div className="font-bold text-green-700 dark:text-green-400 text-lg">우수 (90+)</div>
+                     <div className="text-xs text-green-600/80">안전 목표 달성</div>
                    </div>
                  </div>
-                 <div className="flex items-center gap-4 p-4 rounded-xl bg-yellow-50 border border-yellow-100 dark:bg-yellow-900/10 dark:border-yellow-900/30">
-                   <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-yellow-500/30">B</div>
+                 <div className="flex items-center gap-4 p-4 rounded-xl bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
+                   <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-yellow-500/20">B</div>
                    <div>
-                     <div className="font-bold text-yellow-700 dark:text-yellow-400">주의 (80-89)</div>
-                     <div className="text-xs text-yellow-600/80">관심 필요</div>
+                     <div className="font-bold text-yellow-700 dark:text-yellow-400 text-lg">주의 (80-89)</div>
+                     <div className="text-xs text-yellow-600/80">지속적 관리 필요</div>
                    </div>
                  </div>
-                 <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-100 dark:bg-red-900/10 dark:border-red-900/30">
-                   <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-red-500/30">C</div>
+                 <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+                   <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-red-500/20">C</div>
                    <div>
-                     <div className="font-bold text-red-700 dark:text-red-400">심각 (&lt;80)</div>
-                     <div className="text-xs text-red-600/80">조치 필요</div>
+                     <div className="font-bold text-red-700 dark:text-red-400 text-lg">심각 (80미만)</div>
+                     <div className="text-xs text-red-600/80">즉시 개선 조치</div>
                    </div>
                  </div>
                </CardContent>
@@ -179,55 +209,62 @@ export default function Dashboard() {
           </div>
 
           {/* Table Section */}
-          <Card className="shadow-lg border-border/50 overflow-hidden">
+          <Card className="shadow-xl border-border/50 overflow-hidden">
+            <div className="bg-muted/30 px-6 py-4 border-b flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                상세 데이터 분석
+              </h3>
+              <span className="text-xs text-muted-foreground font-medium">단위: 건수 / 점수</span>
+            </div>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="w-[150px]">부서명</TableHead>
-                    <TableHead className="text-center">차량수</TableHead>
-                    <TableHead className="text-center text-red-600">작업사고</TableHead>
-                    <TableHead className="text-center text-orange-600">차량사고</TableHead>
-                    <TableHead className="text-center text-orange-600">과속</TableHead>
-                    <TableHead className="text-center text-orange-600">신호</TableHead>
-                    <TableHead className="text-center text-orange-600">차선</TableHead>
-                    <TableHead className="text-center text-red-600">점검미준수</TableHead>
-                    <TableHead className="text-center text-green-600">우수제안</TableHead>
-                    <TableHead className="text-center text-green-600">우수활동</TableHead>
-                    <TableHead className="text-right font-bold">총점</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[180px] font-bold text-foreground py-4">부서명</TableHead>
+                    <TableHead className="text-center font-bold text-foreground">차량</TableHead>
+                    <TableHead className="text-center font-bold text-red-600">작업사고</TableHead>
+                    <TableHead className="text-center font-bold text-orange-600">차량사고</TableHead>
+                    <TableHead className="text-center font-bold text-orange-600">과속</TableHead>
+                    <TableHead className="text-center font-bold text-orange-600">신호</TableHead>
+                    <TableHead className="text-center font-bold text-orange-600">차선</TableHead>
+                    <TableHead className="text-center font-bold text-red-600">점검미준수</TableHead>
+                    <TableHead className="text-center font-bold text-green-600">우수제안</TableHead>
+                    <TableHead className="text-center font-bold text-green-600">우수활동</TableHead>
+                    <TableHead className="text-right font-black text-primary text-base pr-8">최종 점수</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedTeams.map((team, idx) => (
                     <motion.tr 
                       key={team.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="group hover:bg-muted/30 transition-colors"
+                      className="group border-b last:border-0 hover:bg-muted/20 transition-colors"
                     >
-                      <TableCell className="font-medium font-display">{team.name}</TableCell>
-                      <TableCell className="text-center text-muted-foreground">{team.vehicleCount}</TableCell>
-                      <TableCell className="text-center font-mono text-red-600/80">{team.workAccident || "-"}</TableCell>
-                      <TableCell className="text-center font-mono text-orange-600/80">
-                         {calculateVehicleAccidentCount(team.vehicleAccidents) || "-"}
+                      <TableCell className="font-bold py-4 text-base">{team.name}</TableCell>
+                      <TableCell className="text-center font-medium">{team.vehicleCount}</TableCell>
+                      <TableCell className="text-center text-red-600 font-bold">{team.workAccident}</TableCell>
+                      <TableCell className="text-center text-orange-600 font-medium">
+                        {calculateVehicleAccidentCount(team.vehicleAccidents)}
                       </TableCell>
-                      <TableCell className="text-center text-muted-foreground">{team.fineSpeed || "-"}</TableCell>
-                      <TableCell className="text-center text-muted-foreground">{team.fineSignal || "-"}</TableCell>
-                      <TableCell className="text-center text-muted-foreground">{team.fineLane || "-"}</TableCell>
-                      <TableCell className="text-center font-mono text-red-600/80">{team.inspectionMiss || "-"}</TableCell>
-                      <TableCell className="text-center font-mono text-green-600/80">{team.suggestion || "-"}</TableCell>
-                      <TableCell className="text-center font-mono text-green-600/80">{team.activity || "-"}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-center text-orange-500">{team.fineSpeed}</TableCell>
+                      <TableCell className="text-center text-orange-500">{team.fineSignal}</TableCell>
+                      <TableCell className="text-center text-orange-500">{team.fineLane}</TableCell>
+                      <TableCell className="text-center text-red-500 font-medium">{team.inspectionMiss}</TableCell>
+                      <TableCell className="text-center text-green-600 font-medium">{team.suggestion}</TableCell>
+                      <TableCell className="text-center text-green-600 font-medium">{team.activity}</TableCell>
+                      <TableCell className="text-right pr-8">
                         <span className={cn(
-                          "px-2.5 py-1 rounded-lg text-sm font-bold border",
+                          "inline-flex items-center justify-center w-14 h-8 rounded-lg font-black text-lg shadow-sm border",
                           getScoreBadge(team.totalScore)
                         )}>
                           {team.totalScore}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="pr-4 text-right">
                         <TeamEditDialog team={team} disabled={isLocked} />
                       </TableCell>
                     </motion.tr>
