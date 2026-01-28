@@ -27,13 +27,13 @@ export default function Rules() {
       onSuccess: () => {
         setTitle("");
         setContent("");
-        toast({ title: "Rule Added", description: "New safety rule has been posted." });
+        toast({ title: "수칙 추가 완료", description: "새로운 안전 수칙이 게시되었습니다." });
       }
     });
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this rule?")) {
+    if (confirm("이 수칙을 삭제하시겠습니까?")) {
       deleteRule(id);
     }
   };
@@ -46,27 +46,27 @@ export default function Rules() {
             <div className="bg-primary/10 p-2 rounded-xl text-primary">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            Safety Rules
+            안전 수칙
           </h2>
-          <p className="text-muted-foreground mt-2">Mandatory safety protocols and guidelines.</p>
+          <p className="text-muted-foreground mt-2">필수 안전 프로토콜 및 가이드라인입니다.</p>
         </div>
       </div>
 
       {/* Input Form */}
       <Card className="glass-card overflow-hidden">
         <div className="p-1 bg-primary/5 border-b border-primary/10">
-           <div className="px-4 py-1 text-xs font-semibold text-primary uppercase tracking-wider">New Rule Entry</div>
+           <div className="px-4 py-1 text-xs font-semibold text-primary uppercase tracking-wider">새 수칙 등록</div>
         </div>
         <CardContent className="p-6 space-y-4">
           <Input 
-            placeholder="Rule Title (e.g., Mandatory PPE)" 
+            placeholder="수칙 제목 (예: 필수 보호구 착용)" 
             value={title} 
             onChange={e => setTitle(e.target.value)}
             disabled={isLocked}
             className="font-medium"
           />
           <Textarea 
-            placeholder="Detailed description of the safety rule..." 
+            placeholder="안전 수칙에 대한 상세 설명을 입력하세요..." 
             value={content} 
             onChange={e => setContent(e.target.value)}
             disabled={isLocked}
@@ -74,12 +74,12 @@ export default function Rules() {
           />
           <div className="flex justify-end">
             <Button onClick={handleAdd} disabled={isLocked || isCreating || !title} className="gap-2">
-              <Plus className="w-4 h-4" /> Add Rule
+              <Plus className="w-4 h-4" /> 수칙 추가
             </Button>
           </div>
           {isLocked && (
             <div className="flex items-center gap-2 text-xs text-red-500 bg-red-50 p-2 rounded-lg border border-red-100">
-              <AlertCircle className="w-4 h-4" /> System is locked. Editing is disabled.
+              <AlertCircle className="w-4 h-4" /> 시스템이 잠겨 있습니다. 편집이 비활성화되었습니다.
             </div>
           )}
         </CardContent>
@@ -127,7 +127,7 @@ export default function Rules() {
         )}
         {rules?.length === 0 && (
           <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-2xl border border-dashed">
-            No rules have been added yet.
+            아직 등록된 수칙이 없습니다.
           </div>
         )}
       </div>

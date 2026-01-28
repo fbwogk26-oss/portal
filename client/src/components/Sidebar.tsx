@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Safety Rules", href: "/rules", icon: ShieldCheck },
-  { label: "Notices", href: "/notices", icon: Bell },
-  { label: "Education", href: "/education", icon: GraduationCap },
+  { label: "대시보드", href: "/", icon: LayoutDashboard },
+  { label: "안전수칙", href: "/rules", icon: ShieldCheck },
+  { label: "공지/알림", href: "/notices", icon: Bell },
+  { label: "안전교육", href: "/education", icon: GraduationCap },
 ];
 
 export function Sidebar() {
@@ -53,8 +53,8 @@ export function Sidebar() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="font-display font-bold text-lg leading-tight">SafeBoard</h1>
-              <p className="text-xs text-muted-foreground">Portal System</p>
+              <h1 className="font-display font-bold text-lg leading-tight">안전보드</h1>
+              <p className="text-xs text-muted-foreground">포털 시스템</p>
             </div>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function Sidebar() {
           <NavLinks />
         </div>
         <div className="p-4 border-t border-border/50 text-xs text-center text-muted-foreground">
-          v3.0.0 Enterprise Edition
+          v3.0.0 엔터프라이즈 에디션
         </div>
       </aside>
 

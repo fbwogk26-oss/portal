@@ -27,13 +27,13 @@ export default function Education() {
       onSuccess: () => {
         setTitle("");
         setContent("");
-        toast({ title: "Material Added", description: "Education resource published." });
+        toast({ title: "자료 추가 완료", description: "교육 자료가 게시되었습니다." });
       }
     });
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Delete this material?")) deleteMaterial(id);
+    if (confirm("이 자료를 삭제하시겠습니까?")) deleteMaterial(id);
   };
 
   return (
@@ -44,29 +44,29 @@ export default function Education() {
             <div className="bg-blue-100 p-2 rounded-xl text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
               <GraduationCap className="w-8 h-8" />
             </div>
-            Safety Education
+            안전 교육
           </h2>
-          <p className="text-muted-foreground mt-2">Training materials and safety documentation.</p>
+          <p className="text-muted-foreground mt-2">훈련 자료 및 안전 문서를 관리합니다.</p>
         </div>
       </div>
 
       <Card className="glass-card overflow-hidden border-blue-200 dark:border-blue-900/30">
         <CardContent className="p-6 space-y-4">
           <Input 
-            placeholder="Material Title" 
+            placeholder="자료 제목" 
             value={title} 
             onChange={e => setTitle(e.target.value)}
             disabled={isLocked}
           />
           <Textarea 
-            placeholder="Content description, links, or summary..." 
+            placeholder="내용 설명, 링크 또는 요약..." 
             value={content} 
             onChange={e => setContent(e.target.value)}
             disabled={isLocked}
           />
           <div className="flex justify-end">
             <Button onClick={handleAdd} disabled={isLocked || isCreating || !title} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-              <Plus className="w-4 h-4" /> Add Material
+              <Plus className="w-4 h-4" /> 자료 추가
             </Button>
           </div>
         </CardContent>
@@ -103,8 +103,8 @@ export default function Education() {
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t text-xs text-muted-foreground flex justify-between items-center">
-                <span>Published: {item.createdAt && format(new Date(item.createdAt), "MMM d, yyyy")}</span>
-                <span className="bg-secondary px-2 py-1 rounded">Read More</span>
+                <span>게시일: {item.createdAt && format(new Date(item.createdAt), "yyyy-MM-dd")}</span>
+                <span className="bg-secondary px-2 py-1 rounded">상세 보기</span>
               </div>
             </motion.div>
           ))}

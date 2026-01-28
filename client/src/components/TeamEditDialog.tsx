@@ -63,7 +63,7 @@ export function TeamEditDialog({ team, disabled }: Props) {
       {
         onSuccess: () => {
           setOpen(false);
-          toast({ title: "Updated", description: "Team data saved successfully." });
+          toast({ title: "업데이트 완료", description: "부서 데이터가 성공적으로 저장되었습니다." });
         },
       }
     );
@@ -184,9 +184,9 @@ export function TeamEditDialog({ team, disabled }: Props) {
         </ScrollArea>
         
         <div className="p-6 border-t bg-muted/10 flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>취소</Button>
           <Button onClick={form.handleSubmit(onSubmit)} disabled={updateTeam.isPending}>
-            {updateTeam.isPending ? "Saving..." : "Save Changes"}
+            {updateTeam.isPending ? "저장 중..." : "변경 사항 저장"}
           </Button>
         </div>
       </DialogContent>

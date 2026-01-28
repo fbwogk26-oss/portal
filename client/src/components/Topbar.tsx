@@ -28,7 +28,7 @@ export function Topbar() {
             <div className="md:hidden font-display font-bold text-xl">SafeBoard</div>
             {isLocked && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200 animate-pulse">
-                <Lock className="w-3 h-3" /> SYSTEM LOCKED
+                <Lock className="w-3 h-3" /> 시스템 잠김
               </div>
             )}
           </div>
@@ -41,7 +41,7 @@ export function Topbar() {
         {/* Ticker - Only if there are notices */}
         <div className="bg-primary/5 border-y border-primary/10 overflow-hidden h-9 flex items-center relative">
           <div className="absolute left-0 z-10 px-3 h-full flex items-center bg-background/50 backdrop-blur-sm text-xs font-bold text-primary uppercase tracking-wider">
-            Notice
+            공지
           </div>
           <div className="w-full overflow-hidden">
             <div className="animate-ticker pause-hover px-4 text-sm font-medium text-foreground/80 flex items-center gap-10">
@@ -54,7 +54,7 @@ export function Topbar() {
                    <span>🚨 {latestNotice.title}: {latestNotice.content}</span>
                  </>
               ) : (
-                <span>System operational. No active critical alerts at this time.</span>
+                <span>시스템 정상 작동 중. 현재 활성화된 긴급 알림이 없습니다.</span>
               )}
             </div>
           </div>
@@ -76,15 +76,15 @@ function AdminButton({ isLocked }: { isLocked: boolean }) {
         setIsOpen(false);
         setPin("");
         toast({
-          title: !isLocked ? "System Locked" : "System Unlocked",
-          description: !isLocked ? "All editing features disabled." : "Editing features enabled.",
+          title: !isLocked ? "시스템 잠금" : "시스템 잠금 해제",
+          description: !isLocked ? "모든 편집 기능이 비활성화되었습니다." : "편집 기능이 활성화되었습니다.",
         });
       },
       onError: () => {
         toast({
           variant: "destructive",
-          title: "Access Denied",
-          description: "Invalid PIN code.",
+          title: "접근 거부",
+          description: "잘못된 PIN 코드입니다.",
         });
       }
     });
@@ -95,16 +95,16 @@ function AdminButton({ isLocked }: { isLocked: boolean }) {
       <DialogTrigger asChild>
         <Button variant={isLocked ? "destructive" : "outline"} size="sm" className="gap-2 shadow-sm">
           {isLocked ? <Lock className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-          <span className="hidden sm:inline">{isLocked ? "Unlock System" : "Admin"}</span>
+          <span className="hidden sm:inline">{isLocked ? "시스템 잠금 해제" : "관리자"}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-xs">
         <DialogHeader>
-          <DialogTitle>Administrator Access</DialogTitle>
+          <DialogTitle>관리자 접속</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Enter PIN</label>
+            <label className="text-sm font-medium">PIN 번호 입력</label>
             <Input 
               type="password" 
               placeholder="••••" 
@@ -113,7 +113,7 @@ function AdminButton({ isLocked }: { isLocked: boolean }) {
               value={pin}
               onChange={(e) => setPin(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground text-center">Default PIN: 2026</p>
+            <p className="text-xs text-muted-foreground text-center">기본 PIN: 2026</p>
           </div>
           <Button 
             className="w-full" 
@@ -122,7 +122,7 @@ function AdminButton({ isLocked }: { isLocked: boolean }) {
             variant={isLocked ? "default" : "destructive"}
           >
             {isPending && <RotateCw className="mr-2 h-4 w-4 animate-spin" />}
-            {isLocked ? "Unlock System" : "Lock System"}
+            {isLocked ? "시스템 잠금 해제" : "시스템 잠금"}
           </Button>
         </div>
       </DialogContent>

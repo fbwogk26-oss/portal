@@ -27,13 +27,13 @@ export default function Notices() {
       onSuccess: () => {
         setTitle("");
         setContent("");
-        toast({ title: "Notice Posted", description: "Will appear in the top ticker." });
+        toast({ title: "공지 등록 완료", description: "상단 티커에 표시됩니다." });
       }
     });
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Delete this notice?")) deleteNotice(id);
+    if (confirm("이 공지를 삭제하시겠습니까?")) deleteNotice(id);
   };
 
   return (
@@ -44,29 +44,29 @@ export default function Notices() {
             <div className="bg-orange-100 p-2 rounded-xl text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
               <Megaphone className="w-8 h-8" />
             </div>
-            Notices & Alerts
+            공지 및 알림
           </h2>
-          <p className="text-muted-foreground mt-2">System-wide announcements and updates.</p>
+          <p className="text-muted-foreground mt-2">시스템 전반의 공지사항 및 업데이트입니다.</p>
         </div>
       </div>
 
       <Card className="glass-card overflow-hidden border-orange-200 dark:border-orange-900/30">
         <CardContent className="p-6 space-y-4">
           <Input 
-            placeholder="Announcement Title" 
+            placeholder="공지 제목" 
             value={title} 
             onChange={e => setTitle(e.target.value)}
             disabled={isLocked}
           />
           <Textarea 
-            placeholder="Message content..." 
+            placeholder="메시지 내용..." 
             value={content} 
             onChange={e => setContent(e.target.value)}
             disabled={isLocked}
           />
           <div className="flex justify-end">
             <Button onClick={handleAdd} disabled={isLocked || isCreating || !title} className="bg-orange-600 hover:bg-orange-700 text-white gap-2">
-              <Plus className="w-4 h-4" /> Post Notice
+              <Plus className="w-4 h-4" /> 공지 게시
             </Button>
           </div>
         </CardContent>
@@ -89,7 +89,7 @@ export default function Notices() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-lg">{notice.title}</h3>
                   <span className="text-xs text-muted-foreground">
-                    {notice.createdAt && format(new Date(notice.createdAt), "PPP p")}
+                    {notice.createdAt && format(new Date(notice.createdAt), "yyyy-MM-dd HH:mm")}
                   </span>
                 </div>
                 <p className="text-muted-foreground">{notice.content}</p>
