@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShieldCheck, Plus, Trash2, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { ShieldCheck, Plus, Trash2, AlertCircle, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,17 @@ export default function Rules() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredRules = useMemo(() => {
+    if (!rules) return [];
+    if (!searchQuery.trim()) return rules;
+    const query = searchQuery.toLowerCase();
+    return rules.filter(rule => 
+      rule.title.toLowerCase().includes(query) || 
+      rule.content.toLowerCase().includes(query)
+    );
+  }, [rules, searchQuery]);
 
   const handleAdd = () => {
     if (!title || !content) return;
@@ -40,7 +51,7 @@ export default function Rules() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-3">
             <div className="bg-primary/10 p-2 rounded-xl text-primary">
@@ -49,6 +60,16 @@ export default function Rules() {
             안전 수칙
           </h2>
           <p className="text-muted-foreground mt-2">필수 안전 프로토콜 및 가이드라인입니다.</p>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="수칙 검색..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9"
+            data-testid="input-search-rules"
+          />
         </div>
       </div>
 
@@ -93,7 +114,7 @@ export default function Rules() {
           </div>
         ) : (
           <AnimatePresence>
-            {rules?.map((rule) => (
+            {filteredRules.map((rule) => (
               <motion.div
                 key={rule.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -125,9 +146,9 @@ export default function Rules() {
             ))}
           </AnimatePresence>
         )}
-        {rules?.length === 0 && (
+        {!isLoading && filteredRules.length === 0 && (
           <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-2xl border border-dashed">
-            아직 등록된 수칙이 없습니다.
+            {searchQuery ? `"${searchQuery}"에 대한 검색 결과가 없습니다.` : "아직 등록된 수칙이 없습니다."}
           </div>
         )}
       </div>
