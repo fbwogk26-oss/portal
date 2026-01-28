@@ -60,7 +60,11 @@ export default function Dashboard() {
     }
   };
 
-  // Sort teams by score descending
+  // Fixed team order
+  const teamOrder = ["동대구운용팀", "서대구운용팀", "남대구운용팀", "포항운용팀", "안동운용팀", "구미운용팀", "문경운용팀"];
+  const orderedTeams = teams ? teamOrder.map(name => teams.find(t => t.name === name)).filter(Boolean) as typeof teams : [];
+  
+  // Sort teams by score descending for table
   const sortedTeams = teams ? [...teams].sort((a, b) => b.totalScore - a.totalScore) : [];
 
   const getScoreColor = (score: number) => {
@@ -152,9 +156,9 @@ export default function Dashboard() {
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <Trophy className="w-6 h-6 text-yellow-500" />
-                    팀별 안전 성능 순위
+                    팀별 안전점수
                   </CardTitle>
-                  <CardDescription>실시간 안전 점수 현황 (높을수록 우수)</CardDescription>
+                  <CardDescription>실시간 안전 점수 현황</CardDescription>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
@@ -173,7 +177,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="h-[280px] pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sortedTeams} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={orderedTeams} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                     <XAxis 
                       dataKey="name" 
@@ -217,7 +221,7 @@ export default function Dashboard() {
                       radius={[6, 6, 0, 0]}
                       barSize={45}
                     >
-                      {sortedTeams.map((entry, index) => (
+                      {orderedTeams.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={entry.totalScore >= 90 ? '#10b981' : entry.totalScore >= 80 ? '#f59e0b' : '#ef4444'} 
