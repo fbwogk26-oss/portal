@@ -110,8 +110,8 @@ export default function Dashboard() {
       ) : (
         <>
           {/* Chart Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-             <Card className="lg:col-span-3 shadow-lg border-border/50">
+          <div className="grid grid-cols-1 gap-6">
+             <Card className="shadow-lg border-border/50">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Trophy className="w-6 h-6 text-yellow-500" />
@@ -119,7 +119,21 @@ export default function Dashboard() {
                 </CardTitle>
                 <CardDescription>실시간 안전 점수 현황 (높을수록 우수)</CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px] pt-4">
+              <CardContent className="h-[400px] pt-4 relative">
+                <div className="absolute top-2 left-2 z-10 text-xs text-muted-foreground space-y-0.5">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span>우수 90+</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    <span>주의 80-89</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span>심각 80미만</span>
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={sortedTeams} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
@@ -176,35 +190,6 @@ export default function Dashboard() {
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
-             </Card>
-
-             <Card className="shadow-lg border-border/50 flex flex-col">
-               <CardHeader>
-                 <CardTitle className="text-lg">평가 기준</CardTitle>
-               </CardHeader>
-               <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
-                 <div className="flex items-center gap-4 p-4 rounded-xl bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800">
-                   <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-green-500/20">A</div>
-                   <div>
-                     <div className="font-bold text-green-700 dark:text-green-400 text-lg">우수 (90+)</div>
-                     <div className="text-xs text-green-600/80">안전 목표 달성</div>
-                   </div>
-                 </div>
-                 <div className="flex items-center gap-4 p-4 rounded-xl bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
-                   <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-yellow-500/20">B</div>
-                   <div>
-                     <div className="font-bold text-yellow-700 dark:text-yellow-400 text-lg">주의 (80-89)</div>
-                     <div className="text-xs text-yellow-600/80">지속적 관리 필요</div>
-                   </div>
-                 </div>
-                 <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
-                   <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-red-500/20">C</div>
-                   <div>
-                     <div className="font-bold text-red-700 dark:text-red-400 text-lg">심각 (80미만)</div>
-                     <div className="text-xs text-red-600/80">즉시 개선 조치</div>
-                   </div>
-                 </div>
-               </CardContent>
              </Card>
           </div>
 
