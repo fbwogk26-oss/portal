@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const [year, setYear] = useState(2025);
+  const [year, setYear] = useState(2026);
   const [baseVehicleCount, setBaseVehicleCount] = useState(15);
   
   const { data: teams, isLoading, refetch, isRefetching } = useTeams(year);
@@ -131,7 +131,7 @@ export default function Dashboard() {
                       interval={0}
                     />
                     <YAxis 
-                      domain={[0, 110]} 
+                      domain={[0, 100]} 
                       axisLine={false} 
                       tickLine={false}
                       tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
