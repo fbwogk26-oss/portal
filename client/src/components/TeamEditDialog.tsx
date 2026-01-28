@@ -159,15 +159,17 @@ export function TeamEditDialog({ team, disabled }: Props) {
               </h3>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {[
-                  { k: "p50_59", l: "50-59%" },
-                  { k: "p60_69", l: "60-69%" },
-                  { k: "p70_79", l: "70-79%" },
-                  { k: "p80_89", l: "80-89%" },
-                  { k: "p90_99", l: "90-99%" },
-                  { k: "p100", l: "100%" },
+                  { k: "p50_59", l: "50-59%", score: -5 },
+                  { k: "p60_69", l: "60-69%", score: -6 },
+                  { k: "p70_79", l: "70-79%", score: -7 },
+                  { k: "p80_89", l: "80-89%", score: -8 },
+                  { k: "p90_99", l: "90-99%", score: -9 },
+                  { k: "p100", l: "100%", score: -10 },
                 ].map((band) => (
                   <div key={band.k}>
-                    <Label className="text-[10px] text-muted-foreground mb-1 block">{band.l}</Label>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">
+                      {band.l} <span className="text-red-500">({band.score}점)</span>
+                    </Label>
                     <Input 
                       type="number" 
                       min={0}
