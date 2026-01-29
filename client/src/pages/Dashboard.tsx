@@ -59,6 +59,17 @@ export default function Dashboard() {
   const resetAllTeams = useResetAllTeams();
   const { toast } = useToast();
 
+  // Vehicle stats (all teams - for summary dashboard)
+  const vehicleStatsAll = useMemo(() => {
+    if (!vehicles) return { total: 0, operating: 0, maintenance: 0, idle: 0 };
+    return {
+      total: vehicles.length,
+      operating: vehicles.filter(v => v.status === "운행중").length,
+      maintenance: vehicles.filter(v => v.status === "정비중").length,
+      idle: vehicles.filter(v => v.status === "대기").length,
+    };
+  }, [vehicles]);
+
   // Vehicle stats (filtered by team)
   const vehicleStats = useMemo(() => {
     if (!vehicles) return { total: 0, operating: 0, maintenance: 0, idle: 0 };
@@ -484,6 +495,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4"
             >
+              {/* 전체 현황 - 종합 대시보드 */}
               <Card className="shadow-lg border-border/50">
                 <CardHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -491,19 +503,8 @@ export default function Dashboard() {
                       <Car className="w-5 h-5 text-cyan-500" />
                       차량 관리 현황
                     </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                      {vehicleFilterTeam === "all" ? "전체 팀" : vehicleFilterTeam.replace('운용팀', '')}
-                    </CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">전체 팀</CardDescription>
                   </div>
-                  <Select value={vehicleFilterTeam} onValueChange={setVehicleFilterTeam}>
-                    <SelectTrigger className="w-[100px] sm:w-[140px] h-8 text-xs" data-testid="select-vehicle-team-filter">
-                      <SelectValue placeholder="팀 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">전체 팀</SelectItem>
-                      {TEAMS.map(t => <SelectItem key={t} value={t}>{t.replace('운용팀', '')}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -521,7 +522,7 @@ export default function Dashboard() {
                         <Car className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-300" />
                       </div>
                       <div>
-                        <p className="text-lg sm:text-2xl font-bold">{vehicleStats.total}</p>
+                        <p className="text-lg sm:text-2xl font-bold">{vehicleStatsAll.total}</p>
                         <p className="text-xs text-muted-foreground">전체</p>
                       </div>
                     </div>
@@ -530,7 +531,7 @@ export default function Dashboard() {
                         <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-300" />
                       </div>
                       <div>
-                        <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{vehicleStats.operating}</p>
+                        <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{vehicleStatsAll.operating}</p>
                         <p className="text-xs text-muted-foreground">운행중</p>
                       </div>
                     </div>
@@ -539,7 +540,7 @@ export default function Dashboard() {
                         <Wrench className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-300" />
                       </div>
                       <div>
-                        <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-400">{vehicleStats.maintenance}</p>
+                        <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-400">{vehicleStatsAll.maintenance}</p>
                         <p className="text-xs text-muted-foreground">정비중</p>
                       </div>
                     </div>
@@ -548,8 +549,71 @@ export default function Dashboard() {
                         <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-300" />
                       </div>
                       <div>
-                        <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{vehicleStats.idle}</p>
+                        <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{vehicleStatsAll.idle}</p>
                         <p className="text-xs text-muted-foreground">대기</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 팀별 현황 - 필터링 가능한 대시보드 */}
+              <Card className="shadow-lg border-border/50 border-cyan-200/50 dark:border-cyan-800/30">
+                <CardHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                      팀별 현황
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {vehicleFilterTeam === "all" ? "팀을 선택하세요" : vehicleFilterTeam.replace('운용팀', '')}
+                    </CardDescription>
+                  </div>
+                  <Select value={vehicleFilterTeam} onValueChange={setVehicleFilterTeam}>
+                    <SelectTrigger className="w-[100px] sm:w-[140px] h-8 text-xs" data-testid="select-vehicle-team-filter">
+                      <SelectValue placeholder="팀 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 팀</SelectItem>
+                      {TEAMS.map(t => <SelectItem key={t} value={t}>{t.replace('운용팀', '')}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 pt-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 sm:p-3 flex items-center gap-2">
+                      <div className="p-1.5 sm:p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                        <Car className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600 dark:text-slate-300" />
+                      </div>
+                      <div>
+                        <p className="text-base sm:text-xl font-bold">{vehicleStats.total}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">전체</p>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg p-2 sm:p-3 flex items-center gap-2">
+                      <div className="p-1.5 sm:p-2 bg-green-200 dark:bg-green-800 rounded-lg">
+                        <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 dark:text-green-300" />
+                      </div>
+                      <div>
+                        <p className="text-base sm:text-xl font-bold text-green-700 dark:text-green-400">{vehicleStats.operating}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">운행중</p>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 sm:p-3 flex items-center gap-2">
+                      <div className="p-1.5 sm:p-2 bg-amber-200 dark:bg-amber-800 rounded-lg">
+                        <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-300" />
+                      </div>
+                      <div>
+                        <p className="text-base sm:text-xl font-bold text-amber-700 dark:text-amber-400">{vehicleStats.maintenance}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">정비중</p>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2 sm:p-3 flex items-center gap-2">
+                      <div className="p-1.5 sm:p-2 bg-blue-200 dark:bg-blue-800 rounded-lg">
+                        <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-300" />
+                      </div>
+                      <div>
+                        <p className="text-base sm:text-xl font-bold text-blue-700 dark:text-blue-400">{vehicleStats.idle}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">대기</p>
                       </div>
                     </div>
                   </div>
