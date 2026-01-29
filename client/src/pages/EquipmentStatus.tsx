@@ -151,7 +151,11 @@ function EquipmentListItem({
   );
 }
 
-export default function EquipmentStatus() {
+interface EquipmentStatusProps {
+  embedded?: boolean;
+}
+
+export default function EquipmentStatus({ embedded = false }: EquipmentStatusProps) {
   const { data: statusRecords, isLoading } = useNotices("equip_status");
   const { mutate: createRecord, isPending: isCreating } = useCreateNotice();
   const { mutate: updateRecord, isPending: isUpdating } = useUpdateNotice();
@@ -486,21 +490,26 @@ export default function EquipmentStatus() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className={embedded ? "space-y-4" : "max-w-7xl mx-auto space-y-6"}>
       <div className="flex items-center gap-4">
-        <Link href="/equipment">
-          <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-back">
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold">등록 현황</h2>
-          <p className="text-sm text-muted-foreground">
-            <span className="text-blue-600">등록</span> / <span className="text-green-600">양호</span> / <span className="text-red-600">불량</span>
-          </p>
-        </div>
+        {!embedded && (
+          <Link href="/equipment">
+            <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-back">
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+        )}
+        {!embedded && (
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">등록 현황</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="text-blue-600">등록</span> / <span className="text-green-600">양호</span> / <span className="text-red-600">불량</span>
+            </p>
+          </div>
+        )}
+        {embedded && <div className="flex-1" />}
         <Select value={selectedTeam} onValueChange={(val) => { setSelectedTeam(val); setEditMode(false); }}>
-          <SelectTrigger className="w-[200px]" data-testid="select-team">
+          <SelectTrigger className={embedded ? "w-[140px] h-8 text-xs" : "w-[200px]"} data-testid="select-team">
             <SelectValue placeholder="팀 선택" />
           </SelectTrigger>
           <SelectContent>

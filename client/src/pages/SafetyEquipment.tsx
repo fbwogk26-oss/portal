@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { HardHat, Building2, ShoppingCart, ArrowRight, FileText, Plus, Trash2, ImagePlus, X, Upload, Download, FileSpreadsheet } from "lucide-react";
+import { HardHat, ShoppingCart, ArrowRight, FileText, Plus, Trash2, ImagePlus, X, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { Link } from "wouter";
 import { useNotices, useCreateNotice, useDeleteNotice } from "@/hooks/use-notices";
 import { useLockStatus } from "@/hooks/use-settings";
@@ -12,15 +12,6 @@ import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SUBMENU_ITEMS = [
-  {
-    title: "팀별 보호구 현황",
-    description: "각 팀의 안전보호구 보유 및 배포 현황을 확인합니다.",
-    icon: Building2,
-    href: "/equipment/status",
-    bgColor: "bg-amber-100 dark:bg-amber-900/30",
-    iconColor: "text-amber-600 dark:text-amber-400",
-    borderColor: "border-amber-200 dark:border-amber-900/30 hover:border-amber-400"
-  },
   {
     title: "용품 신청",
     description: "안전용품을 신청합니다.",

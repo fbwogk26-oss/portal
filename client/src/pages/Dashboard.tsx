@@ -33,7 +33,7 @@ import { TeamEditDialog } from "@/components/TeamEditDialog";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import VehicleManagement from "./VehicleManagement";
-import SafetyEquipment from "./SafetyEquipment";
+import EquipmentStatus from "./EquipmentStatus";
 
 type DashboardTab = "safety" | "vehicle" | "equipment";
 
@@ -621,7 +621,7 @@ export default function Dashboard() {
 
               {showEquipmentDetail && (
                 <div className="mt-4">
-                  <SafetyEquipment embedded />
+                  <EquipmentStatus embedded />
                 </div>
               )}
             </motion.div>
