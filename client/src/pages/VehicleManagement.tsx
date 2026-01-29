@@ -63,6 +63,7 @@ export default function VehicleManagement() {
     year: new Date().getFullYear(),
     team: TEAMS[0],
     driver: "",
+    secondDriver: "",
     contact: "",
     status: "운행중",
     purchaseDate: "",
@@ -137,6 +138,7 @@ export default function VehicleManagement() {
       year: new Date().getFullYear(),
       team: TEAMS[0],
       driver: "",
+      secondDriver: "",
       contact: "",
       status: "운행중",
       purchaseDate: "",
@@ -189,6 +191,7 @@ export default function VehicleManagement() {
       year: vehicle.year || new Date().getFullYear(),
       team: vehicle.team,
       driver: vehicle.driver || "",
+      secondDriver: vehicle.secondDriver || "",
       contact: vehicle.contact || "",
       status: vehicle.status,
       purchaseDate: vehicle.purchaseDate || "",
@@ -494,12 +497,21 @@ export default function VehicleManagement() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">담당자</label>
+              <label className="text-sm font-medium">주운행자</label>
               <Input 
                 placeholder="홍길동" 
                 value={formData.driver || ""}
                 onChange={e => setFormData(prev => ({ ...prev, driver: e.target.value }))}
                 data-testid="input-vehicle-driver"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">부운행자</label>
+              <Input 
+                placeholder="김철수" 
+                value={formData.secondDriver || ""}
+                onChange={e => setFormData(prev => ({ ...prev, secondDriver: e.target.value }))}
+                data-testid="input-vehicle-second-driver"
               />
             </div>
             <div className="space-y-2">
@@ -647,8 +659,12 @@ export default function VehicleManagement() {
                     <p className="font-medium">{selectedVehicle.team}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">담당자</p>
+                    <p className="text-sm text-muted-foreground">주운행자</p>
                     <p className="font-medium">{selectedVehicle.driver || "-"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">부운행자</p>
+                    <p className="font-medium">{selectedVehicle.secondDriver || "-"}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">연락처</p>

@@ -57,6 +57,7 @@ export const vehicles = pgTable("vehicles", {
   year: integer("year"),
   team: text("team").notNull(),
   driver: text("driver"),
+  secondDriver: text("second_driver"),
   contact: text("contact"),
   status: text("status").notNull().default("운행중"),
   purchaseDate: text("purchase_date"),
