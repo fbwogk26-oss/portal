@@ -103,18 +103,18 @@ function CircularProgress({ value, max, color, label, size = 120 }: { value: num
 function EquipmentListItem({ 
   name, 
   totalQuantity,
-  registered, 
-  good, 
-  bad, 
+  registeredQty, 
+  goodQty, 
+  badQty, 
   isSelected, 
   onClick,
   icon: Icon
 }: { 
   name: string; 
   totalQuantity: number;
-  registered: number; 
-  good: number; 
-  bad: number; 
+  registeredQty: number; 
+  goodQty: number; 
+  badQty: number; 
   isSelected: boolean; 
   onClick: () => void;
   icon?: any;
@@ -137,11 +137,11 @@ function EquipmentListItem({
         <p className="text-sm">
           <span className="text-foreground font-semibold">{totalQuantity}개</span>
           <span className="text-muted-foreground"> (</span>
-          <span className="text-blue-600">{registered}</span>
+          <span className="text-blue-600">{registeredQty}</span>
           <span className="text-muted-foreground"> / </span>
-          <span className="text-green-600">{good}</span>
+          <span className="text-green-600">{goodQty}</span>
           <span className="text-muted-foreground"> / </span>
-          <span className="text-red-600">{bad}</span>
+          <span className="text-red-600">{badQty}</span>
           <span className="text-muted-foreground">)</span>
         </p>
       </div>
@@ -201,9 +201,9 @@ export default function EquipmentStatus() {
     return {
       total: items.length,
       totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
-      registered: items.filter(i => i.status === "등록").length,
-      good: items.filter(i => i.status === "양호").length,
-      bad: items.filter(i => i.status === "불량").length,
+      registeredQty: items.filter(i => i.status === "등록").reduce((sum, i) => sum + (i.quantity || 0), 0),
+      goodQty: items.filter(i => i.status === "양호").reduce((sum, i) => sum + (i.quantity || 0), 0),
+      badQty: items.filter(i => i.status === "불량").reduce((sum, i) => sum + (i.quantity || 0), 0),
     };
   }, [aggregatedData, selectedCategory]);
 
@@ -215,9 +215,9 @@ export default function EquipmentStatus() {
         name,
         category: items[0]?.category || "기타품목",
         totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
-        registered: items.filter(i => i.status === "등록").length,
-        good: items.filter(i => i.status === "양호").length,
-        bad: items.filter(i => i.status === "불량").length,
+        registeredQty: items.filter(i => i.status === "등록").reduce((sum, i) => sum + (i.quantity || 0), 0),
+        goodQty: items.filter(i => i.status === "양호").reduce((sum, i) => sum + (i.quantity || 0), 0),
+        badQty: items.filter(i => i.status === "불량").reduce((sum, i) => sum + (i.quantity || 0), 0),
       };
     });
   }, [aggregatedData]);
@@ -394,9 +394,9 @@ export default function EquipmentStatus() {
             <EquipmentListItem
               name="전체"
               totalQuantity={categoryStats.totalQuantity}
-              registered={categoryStats.registered}
-              good={categoryStats.good}
-              bad={categoryStats.bad}
+              registeredQty={categoryStats.registeredQty}
+              goodQty={categoryStats.goodQty}
+              badQty={categoryStats.badQty}
               isSelected={!selectedCategory}
               onClick={() => setSelectedCategory(null)}
               icon={HardHat}
@@ -407,9 +407,9 @@ export default function EquipmentStatus() {
                 key={idx}
                 name={item.name}
                 totalQuantity={item.totalQuantity}
-                registered={item.registered}
-                good={item.good}
-                bad={item.bad}
+                registeredQty={item.registeredQty}
+                goodQty={item.goodQty}
+                badQty={item.badQty}
                 isSelected={false}
                 onClick={() => {}}
               />
@@ -431,22 +431,22 @@ export default function EquipmentStatus() {
           <CardContent className="p-6">
             <div className="grid grid-cols-3 gap-8 mb-8">
               <CircularProgress 
-                value={categoryStats.registered} 
-                max={categoryStats.total || 1} 
+                value={categoryStats.registeredQty} 
+                max={categoryStats.totalQuantity || 1} 
                 color="#3b82f6" 
                 label="등록"
                 size={140}
               />
               <CircularProgress 
-                value={categoryStats.good} 
-                max={categoryStats.total || 1} 
+                value={categoryStats.goodQty} 
+                max={categoryStats.totalQuantity || 1} 
                 color="#22c55e" 
                 label="양호"
                 size={140}
               />
               <CircularProgress 
-                value={categoryStats.bad} 
-                max={categoryStats.total || 1} 
+                value={categoryStats.badQty} 
+                max={categoryStats.totalQuantity || 1} 
                 color="#ef4444" 
                 label="불량"
                 size={140}
@@ -455,15 +455,15 @@ export default function EquipmentStatus() {
 
             <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">
               <div>
-                <div className="text-3xl font-bold text-blue-600">{categoryStats.registered}</div>
+                <div className="text-3xl font-bold text-blue-600">{categoryStats.registeredQty}</div>
                 <div className="text-sm text-muted-foreground">등록</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-green-600">{categoryStats.good}</div>
+                <div className="text-3xl font-bold text-green-600">{categoryStats.goodQty}</div>
                 <div className="text-sm text-muted-foreground">양호</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-red-600">{categoryStats.bad}</div>
+                <div className="text-3xl font-bold text-red-600">{categoryStats.badQty}</div>
                 <div className="text-sm text-muted-foreground">불량</div>
               </div>
             </div>
