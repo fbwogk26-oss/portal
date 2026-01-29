@@ -602,7 +602,7 @@ export async function registerRoutes(
       
       const emailResult = await resend.emails.send({
         from: 'onboarding@resend.dev',
-        to: 'jaeha.ryu@ktmos.co.kr',
+        to: 'fbwogk26@gmail.com',
         subject: `[출입신청] ${visitPurpose} - ${formattedStart}`,
         html: `
           <h2>출입신청서가 등록되었습니다</h2>
