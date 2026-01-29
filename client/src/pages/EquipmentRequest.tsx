@@ -28,35 +28,50 @@ export default function EquipmentRequest() {
   const [requesterName, setRequesterName] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageName, setImageName] = useState<string | null>(null);
+  const [images, setImages] = useState<{url: string; name: string}[]>([]);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  const MAX_IMAGES = 10;
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
+    const remainingSlots = MAX_IMAGES - images.length;
+    if (remainingSlots <= 0) {
+      toast({ variant: "destructive", title: `최대 ${MAX_IMAGES}개까지 첨부할 수 있습니다.` });
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
     setIsImageUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
     
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.imageUrl) {
-        setImageUrl(data.imageUrl);
-        setImageName(file.name);
-        toast({ title: "사진 업로드 완료" });
+      for (const file of filesToUpload) {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.imageUrl) {
+          setImages(prev => [...prev, { url: data.imageUrl, name: file.name }]);
+        }
       }
+      toast({ title: `${filesToUpload.length}개 사진 업로드 완료` });
     } catch (err) {
       toast({ variant: "destructive", title: "업로드 실패" });
     } finally {
       setIsImageUploading(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
     }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAdd = () => {
@@ -66,8 +81,7 @@ export default function EquipmentRequest() {
       requester: requesterName,
       text: content,
       status: "pending",
-      imageUrl: imageUrl,
-      imageName: imageName,
+      images: images,
     });
     createRequest({ title, content: contentData, category: "equip_request" }, {
       onSuccess: () => {
@@ -75,8 +89,7 @@ export default function EquipmentRequest() {
         setContent("");
         setSelectedTeam("");
         setRequesterName("");
-        setImageUrl(null);
-        setImageName(null);
+        setImages([]);
         toast({ title: "신청 완료", description: "용품 신청이 등록되었습니다." });
       }
     });
@@ -176,40 +189,50 @@ export default function EquipmentRequest() {
           <input
             type="file"
             accept="image/*"
+            multiple
             ref={imageInputRef}
             onChange={handleImageUpload}
             className="hidden"
             data-testid="input-request-image"
           />
 
-          <div className="flex flex-wrap gap-2">
-            {imageUrl ? (
-              <div className="flex items-center gap-3 p-2 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
-                <img src={imageUrl} alt="첨부 이미지" className="w-16 h-16 object-cover rounded" />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-blue-700 dark:text-blue-400">{imageName}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => { setImageUrl(null); setImageName(null); }}
-                    data-testid="button-remove-request-image"
-                  >
-                    <X className="w-3 h-3 mr-1" /> 삭제
-                  </Button>
-                </div>
-              </div>
-            ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 onClick={() => imageInputRef.current?.click()}
-                disabled={isImageUploading}
+                disabled={isImageUploading || images.length >= MAX_IMAGES}
                 className="gap-2"
                 data-testid="button-add-request-image"
               >
                 <Image className="w-4 h-4" />
                 {isImageUploading ? "업로드 중..." : "사진 첨부"}
               </Button>
+              <span className="text-sm text-muted-foreground">
+                {images.length}/{MAX_IMAGES}개
+              </span>
+            </div>
+            
+            {images.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
+                {images.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={img.url} 
+                      alt={img.name} 
+                      className="w-20 h-20 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      data-testid={`button-remove-image-${index}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           
@@ -263,7 +286,28 @@ export default function EquipmentRequest() {
                         {item.createdAt && format(new Date(item.createdAt), "yyyy-MM-dd")}
                       </TableCell>
                       <TableCell className="text-center">
-                        {parsed.imageUrl ? (
+                        {parsed.images && parsed.images.length > 0 ? (
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {parsed.images.slice(0, 3).map((img: {url: string; name: string}, idx: number) => (
+                              <a 
+                                key={idx}
+                                href={img.url} 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block"
+                              >
+                                <img 
+                                  src={img.url} 
+                                  alt={img.name} 
+                                  className="w-10 h-10 object-cover rounded border hover:opacity-80 transition-opacity cursor-pointer"
+                                />
+                              </a>
+                            ))}
+                            {parsed.images.length > 3 && (
+                              <span className="text-xs text-muted-foreground self-center">+{parsed.images.length - 3}</span>
+                            )}
+                          </div>
+                        ) : parsed.imageUrl ? (
                           <a 
                             href={parsed.imageUrl} 
                             target="_blank"
@@ -273,7 +317,7 @@ export default function EquipmentRequest() {
                             <img 
                               src={parsed.imageUrl} 
                               alt="첨부 사진" 
-                              className="w-12 h-12 object-cover rounded border hover:opacity-80 transition-opacity cursor-pointer"
+                              className="w-10 h-10 object-cover rounded border hover:opacity-80 transition-opacity cursor-pointer"
                             />
                           </a>
                         ) : "-"}
