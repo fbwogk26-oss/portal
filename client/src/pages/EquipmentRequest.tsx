@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, Plus, Trash2, Upload, Download, FileSpreadsheet, X, ChevronLeft, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, Upload, Image, X, ChevronLeft, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -28,34 +28,34 @@ export default function EquipmentRequest() {
   const [requesterName, setRequesterName] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [excelUrl, setExcelUrl] = useState<string | null>(null);
-  const [excelName, setExcelName] = useState<string | null>(null);
-  const [isExcelUploading, setIsExcelUploading] = useState(false);
-  const excelInputRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageName, setImageName] = useState<string | null>(null);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    setIsExcelUploading(true);
+    setIsImageUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
     
     try {
-      const res = await fetch('/api/upload/file', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
-      if (data.fileUrl) {
-        setExcelUrl(data.fileUrl);
-        setExcelName(file.name);
-        toast({ title: "엑셀 파일 업로드 완료" });
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl);
+        setImageName(file.name);
+        toast({ title: "사진 업로드 완료" });
       }
     } catch (err) {
       toast({ variant: "destructive", title: "업로드 실패" });
     } finally {
-      setIsExcelUploading(false);
+      setIsImageUploading(false);
     }
   };
 
@@ -66,8 +66,8 @@ export default function EquipmentRequest() {
       requester: requesterName,
       text: content,
       status: "pending",
-      excelUrl: excelUrl,
-      excelName: excelName,
+      imageUrl: imageUrl,
+      imageName: imageName,
     });
     createRequest({ title, content: contentData, category: "equip_request" }, {
       onSuccess: () => {
@@ -75,8 +75,8 @@ export default function EquipmentRequest() {
         setContent("");
         setSelectedTeam("");
         setRequesterName("");
-        setExcelUrl(null);
-        setExcelName(null);
+        setImageUrl(null);
+        setImageName(null);
         toast({ title: "신청 완료", description: "용품 신청이 등록되었습니다." });
       }
     });
@@ -175,38 +175,40 @@ export default function EquipmentRequest() {
           
           <input
             type="file"
-            accept=".xlsx,.xls"
-            ref={excelInputRef}
-            onChange={handleExcelUpload}
+            accept="image/*"
+            ref={imageInputRef}
+            onChange={handleImageUpload}
             className="hidden"
-            data-testid="input-request-excel"
+            data-testid="input-request-image"
           />
 
           <div className="flex flex-wrap gap-2">
-            {excelUrl ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
-                <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-green-700 dark:text-green-400">{excelName}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => { setExcelUrl(null); setExcelName(null); }}
-                  data-testid="button-remove-request-excel"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+            {imageUrl ? (
+              <div className="flex items-center gap-3 p-2 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
+                <img src={imageUrl} alt="첨부 이미지" className="w-16 h-16 object-cover rounded" />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-blue-700 dark:text-blue-400">{imageName}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => { setImageUrl(null); setImageName(null); }}
+                    data-testid="button-remove-request-image"
+                  >
+                    <X className="w-3 h-3 mr-1" /> 삭제
+                  </Button>
+                </div>
               </div>
             ) : (
               <Button
                 variant="outline"
-                onClick={() => excelInputRef.current?.click()}
-                disabled={isExcelUploading}
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isImageUploading}
                 className="gap-2"
-                data-testid="button-add-request-excel"
+                data-testid="button-add-request-image"
               >
-                <Upload className="w-4 h-4" />
-                {isExcelUploading ? "업로드 중..." : "신청 양식 첨부 (엑셀)"}
+                <Image className="w-4 h-4" />
+                {isImageUploading ? "업로드 중..." : "사진 첨부"}
               </Button>
             )}
           </div>
@@ -236,7 +238,7 @@ export default function EquipmentRequest() {
                 <TableHead className="font-bold">제목</TableHead>
                 <TableHead className="font-bold">내용</TableHead>
                 <TableHead className="font-bold">신청일</TableHead>
-                <TableHead className="font-bold text-center">첨부파일</TableHead>
+                <TableHead className="font-bold text-center">첨부 사진</TableHead>
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -261,14 +263,18 @@ export default function EquipmentRequest() {
                         {item.createdAt && format(new Date(item.createdAt), "yyyy-MM-dd")}
                       </TableCell>
                       <TableCell className="text-center">
-                        {parsed.excelUrl ? (
+                        {parsed.imageUrl ? (
                           <a 
-                            href={parsed.excelUrl} 
-                            download={parsed.excelName}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-200 rounded text-green-700 hover:bg-green-100 transition-colors text-xs dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
+                            href={parsed.imageUrl} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block"
                           >
-                            <Download className="w-3 h-3" />
-                            다운로드
+                            <img 
+                              src={parsed.imageUrl} 
+                              alt="첨부 사진" 
+                              className="w-12 h-12 object-cover rounded border hover:opacity-80 transition-opacity cursor-pointer"
+                            />
                           </a>
                         ) : "-"}
                       </TableCell>
