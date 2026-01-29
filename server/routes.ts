@@ -414,6 +414,60 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Vehicle Excel Export
+  app.get("/api/vehicles/export", async (req, res) => {
+    const vehicles = await storage.getVehicles();
+    
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('차량목록');
+    
+    worksheet.columns = [
+      { header: '순번', key: 'no', width: 8 },
+      { header: '차량번호', key: 'plateNumber', width: 15 },
+      { header: '부서', key: 'team', width: 15 },
+      { header: '차량명', key: 'model', width: 12 },
+      { header: '차종', key: 'vehicleType', width: 10 },
+      { header: '주운행자', key: 'driver', width: 12 },
+      { header: '부운행자', key: 'secondDriver', width: 12 },
+      { header: '상태', key: 'status', width: 10 },
+      { header: '계약시작일', key: 'purchaseDate', width: 14 },
+      { header: '계약종료일', key: 'insuranceExpiry', width: 14 },
+      { header: '보험연령', key: 'inspectionDate', width: 12 },
+      { header: '비고', key: 'notes', width: 25 },
+    ];
+    
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    
+    vehicles.forEach((v, idx) => {
+      worksheet.addRow({
+        no: idx + 1,
+        plateNumber: v.plateNumber,
+        team: v.team,
+        model: v.model,
+        vehicleType: v.vehicleType,
+        driver: v.driver || '',
+        secondDriver: v.secondDriver || '',
+        status: v.status,
+        purchaseDate: v.purchaseDate || '',
+        insuranceExpiry: v.insuranceExpiry || '',
+        inspectionDate: v.inspectionDate || '',
+        notes: v.notes || '',
+      });
+    });
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=vehicle_list_${today}.xlsx`);
+    res.send(buffer);
+  });
+
   // Seed Data
   await seedDatabase();
 

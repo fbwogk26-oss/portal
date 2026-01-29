@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Car, Plus, Trash2, Edit2, Search, Calendar, Phone, User, MapPin, 
-  Gauge, Shield, AlertTriangle, CheckCircle, XCircle, Wrench, X, ImagePlus
+  Gauge, Shield, AlertTriangle, CheckCircle, XCircle, Wrench, X, ImagePlus, Download
 } from "lucide-react";
 import { useState, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -216,15 +216,25 @@ export default function VehicleManagement() {
             <p className="text-muted-foreground mt-1">회사 업무용 차량을 관리합니다.</p>
           </div>
         </div>
-        {!isLocked && (
+        <div className="flex gap-2">
           <Button 
-            onClick={() => { resetForm(); setShowAddDialog(true); }}
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white gap-2 shadow-lg"
-            data-testid="button-add-vehicle"
+            variant="outline"
+            onClick={() => window.location.href = '/api/vehicles/export'}
+            className="gap-2"
+            data-testid="button-export-vehicles"
           >
-            <Plus className="w-4 h-4" /> 차량 등록
+            <Download className="w-4 h-4" /> 엑셀 다운로드
           </Button>
-        )}
+          {!isLocked && (
+            <Button 
+              onClick={() => { resetForm(); setShowAddDialog(true); }}
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white gap-2 shadow-lg"
+              data-testid="button-add-vehicle"
+            >
+              <Plus className="w-4 h-4" /> 차량 등록
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
