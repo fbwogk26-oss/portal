@@ -470,18 +470,22 @@ export default function EquipmentStatus() {
               icon={HardHat}
             />
             <div className="border-t my-2" />
-            {filteredCategories.map((item, idx) => (
-              <EquipmentListItem
-                key={idx}
-                name={item.name}
-                totalQuantity={item.totalQuantity}
-                registeredQty={item.registeredQty}
-                goodQty={item.goodQty}
-                badQty={item.badQty}
-                isSelected={false}
-                onClick={() => {}}
-              />
-            ))}
+            {filteredCategories.map((item, idx) => {
+              const categoryInfo = CATEGORIES.find(c => c.id === item.category);
+              return (
+                <EquipmentListItem
+                  key={idx}
+                  name={item.name}
+                  totalQuantity={item.totalQuantity}
+                  registeredQty={item.registeredQty}
+                  goodQty={item.goodQty}
+                  badQty={item.badQty}
+                  isSelected={false}
+                  onClick={() => {}}
+                  icon={categoryInfo?.icon}
+                />
+              );
+            })}
             {filteredCategories.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 등록된 보호구가 없습니다.
