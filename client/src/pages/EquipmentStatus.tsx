@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HardHat, Plus, Trash2, Building2, ChevronLeft, Save, Package, Shield, Wrench, Box } from "lucide-react";
+import { HardHat, Plus, Trash2, Building2, ChevronLeft, Save, Package, Shield, Wrench, Box, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -20,35 +20,42 @@ const CATEGORIES = [
   { id: "기타품목", label: "기타품목", icon: Box, color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
 ];
 
+const STATUS_OPTIONS = [
+  { id: "등록", label: "등록", color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20", icon: CheckCircle },
+  { id: "양호", label: "양호", color: "text-green-600 bg-green-50 dark:bg-green-900/20", icon: CheckCircle },
+  { id: "불량", label: "불량", color: "text-red-600 bg-red-50 dark:bg-red-900/20", icon: XCircle },
+];
+
 const DEFAULT_EQUIPMENT_LIST = [
-  { name: "안전모(일반)", quantity: 0, category: "보호구" },
-  { name: "일반안전화", quantity: 0, category: "보호구" },
-  { name: "하계안전화", quantity: 0, category: "보호구" },
-  { name: "실내안전화", quantity: 0, category: "보호구" },
-  { name: "안전장화", quantity: 0, category: "보호구" },
-  { name: "안전대(복합식)", quantity: 0, category: "보호구" },
-  { name: "절연장갑", quantity: 0, category: "보호구" },
-  { name: "안전모(임업)", quantity: 0, category: "보호구" },
-  { name: "안전모(신호수)", quantity: 0, category: "보호구" },
-  { name: "추락방지대(로프식)", quantity: 0, category: "보호구" },
-  { name: "추락방지대(와이어식)", quantity: 0, category: "보호구" },
-  { name: "휴대용소화기", quantity: 0, category: "안전용품" },
-  { name: "반사조끼(주황색조끼)", quantity: 0, category: "안전용품" },
-  { name: "수평구명줄SET", quantity: 0, category: "안전용품" },
-  { name: "비상용삼각대", quantity: 0, category: "안전용품" },
-  { name: "접이식 라바콘", quantity: 0, category: "안전용품" },
-  { name: "차량 고임목", quantity: 0, category: "안전용품" },
-  { name: "A형사다리", quantity: 0, category: "기타품목" },
-  { name: "아웃트리거", quantity: 0, category: "기타품목" },
-  { name: "블랙박스", quantity: 0, category: "기타품목" },
-  { name: "후방센서", quantity: 0, category: "기타품목" },
-  { name: "후방카메라", quantity: 0, category: "기타품목" },
+  { name: "안전모(일반)", quantity: 0, category: "보호구", status: "등록" },
+  { name: "일반안전화", quantity: 0, category: "보호구", status: "등록" },
+  { name: "하계안전화", quantity: 0, category: "보호구", status: "등록" },
+  { name: "실내안전화", quantity: 0, category: "보호구", status: "등록" },
+  { name: "안전장화", quantity: 0, category: "보호구", status: "등록" },
+  { name: "안전대(복합식)", quantity: 0, category: "보호구", status: "등록" },
+  { name: "절연장갑", quantity: 0, category: "보호구", status: "등록" },
+  { name: "안전모(임업)", quantity: 0, category: "보호구", status: "등록" },
+  { name: "안전모(신호수)", quantity: 0, category: "보호구", status: "등록" },
+  { name: "추락방지대(로프식)", quantity: 0, category: "보호구", status: "등록" },
+  { name: "추락방지대(와이어식)", quantity: 0, category: "보호구", status: "등록" },
+  { name: "휴대용소화기", quantity: 0, category: "안전용품", status: "등록" },
+  { name: "반사조끼(주황색조끼)", quantity: 0, category: "안전용품", status: "등록" },
+  { name: "수평구명줄SET", quantity: 0, category: "안전용품", status: "등록" },
+  { name: "비상용삼각대", quantity: 0, category: "안전용품", status: "등록" },
+  { name: "접이식 라바콘", quantity: 0, category: "안전용품", status: "등록" },
+  { name: "차량 고임목", quantity: 0, category: "안전용품", status: "등록" },
+  { name: "A형사다리", quantity: 0, category: "기타품목", status: "등록" },
+  { name: "아웃트리거", quantity: 0, category: "기타품목", status: "등록" },
+  { name: "블랙박스", quantity: 0, category: "기타품목", status: "등록" },
+  { name: "후방센서", quantity: 0, category: "기타품목", status: "등록" },
+  { name: "후방카메라", quantity: 0, category: "기타품목", status: "등록" },
 ];
 
 interface EquipmentItem {
   name: string;
   quantity: number;
   category: string;
+  status: string;
 }
 
 export default function EquipmentStatus() {
@@ -81,11 +88,12 @@ export default function EquipmentStatus() {
       try {
         const parsed = JSON.parse(teamRecord.content);
         if (parsed.items && Array.isArray(parsed.items)) {
-          const itemsWithCategory = parsed.items.map((item: any) => ({
+          const itemsWithFields = parsed.items.map((item: any) => ({
             ...item,
-            category: item.category || getCategoryFromName(item.name)
+            category: item.category || getCategoryFromName(item.name),
+            status: item.status || "등록"
           }));
-          setEquipmentList(itemsWithCategory);
+          setEquipmentList(itemsWithFields);
           setEditingRecordId(teamRecord.id);
         }
       } catch {
@@ -115,13 +123,19 @@ export default function EquipmentStatus() {
     setEquipmentList(newList);
   };
 
+  const handleStatusChange = (index: number, status: string) => {
+    const newList = [...equipmentList];
+    newList[index].status = status;
+    setEquipmentList(newList);
+  };
+
   const handleAddItem = () => {
     if (!newItemName.trim()) return;
     if (equipmentList.some(item => item.name === newItemName.trim())) {
       toast({ variant: "destructive", title: "이미 존재하는 용품입니다." });
       return;
     }
-    setEquipmentList([...equipmentList, { name: newItemName.trim(), quantity: 0, category: newItemCategory }]);
+    setEquipmentList([...equipmentList, { name: newItemName.trim(), quantity: 0, category: newItemCategory, status: "등록" }]);
     setNewItemName("");
     toast({ title: "용품 추가됨" });
   };
@@ -170,10 +184,8 @@ export default function EquipmentStatus() {
     }
   };
 
-  const getQuantityColor = (qty: number) => {
-    if (qty === 0) return "text-red-600 bg-red-50 dark:bg-red-900/20";
-    if (qty <= 5) return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20";
-    return "text-green-600 bg-green-50 dark:bg-green-900/20";
+  const getStatusInfo = (status: string) => {
+    return STATUS_OPTIONS.find(s => s.id === status) || STATUS_OPTIONS[0];
   };
 
   const getCategoryInfo = (categoryId: string) => {
@@ -183,11 +195,6 @@ export default function EquipmentStatus() {
   const filteredEquipmentList = filterCategory === "all" 
     ? equipmentList 
     : equipmentList.filter(item => item.category === filterCategory);
-
-  const groupedEquipment = CATEGORIES.map(cat => ({
-    ...cat,
-    items: equipmentList.filter(item => item.category === cat.id)
-  }));
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -204,7 +211,7 @@ export default function EquipmentStatus() {
             </div>
             팀별 보호구 현황
           </h2>
-          <p className="text-muted-foreground mt-2">각 팀의 안전보호구 보유 수량을 관리합니다.</p>
+          <p className="text-muted-foreground mt-2">각 팀의 안전보호구 보유 수량 및 상태를 관리합니다.</p>
         </div>
       </div>
 
@@ -328,8 +335,8 @@ export default function EquipmentStatus() {
                       <TableHead className="font-bold w-12 text-center">#</TableHead>
                       <TableHead className="font-bold w-32">구분</TableHead>
                       <TableHead className="font-bold">용품명</TableHead>
-                      <TableHead className="font-bold w-32 text-center">수량</TableHead>
-                      <TableHead className="font-bold w-24 text-center">상태</TableHead>
+                      <TableHead className="font-bold w-24 text-center">수량</TableHead>
+                      <TableHead className="font-bold w-28 text-center">상태</TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -337,7 +344,7 @@ export default function EquipmentStatus() {
                     <AnimatePresence>
                       {filteredEquipmentList.map((item, index) => {
                         const originalIndex = equipmentList.findIndex(e => e.name === item.name);
-                        const catInfo = getCategoryInfo(item.category);
+                        const statusInfo = getStatusInfo(item.status);
                         return (
                           <motion.tr
                             key={`${item.name}-${index}`}
@@ -383,9 +390,28 @@ export default function EquipmentStatus() {
                               />
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getQuantityColor(item.quantity)}`}>
-                                {item.quantity === 0 ? "부족" : item.quantity <= 5 ? "주의" : "양호"}
-                              </span>
+                              <Select 
+                                value={item.status} 
+                                onValueChange={(val) => handleStatusChange(originalIndex, val)}
+                                disabled={isLocked}
+                              >
+                                <SelectTrigger 
+                                  className={`h-8 text-xs w-24 mx-auto ${statusInfo.color}`} 
+                                  data-testid={`select-status-${originalIndex}`}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STATUS_OPTIONS.map(opt => (
+                                    <SelectItem key={opt.id} value={opt.id}>
+                                      <div className={`flex items-center gap-1 ${opt.color}`}>
+                                        <opt.icon className="w-3 h-3" />
+                                        {opt.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell>
                               <Button
@@ -409,16 +435,16 @@ export default function EquipmentStatus() {
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                  <span>양호 (6개 이상)</span>
+                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                  <span>등록</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-                  <span>주의 (1~5개)</span>
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  <span>양호</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                  <span>부족 (0개)</span>
+                  <span>불량</span>
                 </div>
               </div>
             </>
@@ -448,7 +474,8 @@ export default function EquipmentStatus() {
                 <TableHead className="font-bold text-center">보호구</TableHead>
                 <TableHead className="font-bold text-center">안전용품</TableHead>
                 <TableHead className="font-bold text-center">기타품목</TableHead>
-                <TableHead className="font-bold text-center">부족 품목</TableHead>
+                <TableHead className="font-bold text-center">양호</TableHead>
+                <TableHead className="font-bold text-center">불량</TableHead>
                 <TableHead className="font-bold">최종 수정일</TableHead>
               </TableRow>
             </TableHeader>
@@ -460,7 +487,8 @@ export default function EquipmentStatus() {
                   const protectiveCount = items.filter((i: EquipmentItem) => (i.category || getCategoryFromName(i.name)) === "보호구").length;
                   const safetyCount = items.filter((i: EquipmentItem) => (i.category || getCategoryFromName(i.name)) === "안전용품").length;
                   const otherCount = items.filter((i: EquipmentItem) => (i.category || getCategoryFromName(i.name)) === "기타품목").length;
-                  const shortage = items.filter((i: EquipmentItem) => i.quantity === 0).length;
+                  const goodCount = items.filter((i: EquipmentItem) => i.status === "양호").length;
+                  const badCount = items.filter((i: EquipmentItem) => i.status === "불량").length;
                   return (
                     <TableRow key={record.id} className="hover:bg-muted/20">
                       <TableCell className="font-medium">{parsed.team}</TableCell>
@@ -468,10 +496,13 @@ export default function EquipmentStatus() {
                       <TableCell className="text-center">{safetyCount}종</TableCell>
                       <TableCell className="text-center">{otherCount}종</TableCell>
                       <TableCell className="text-center">
-                        {shortage > 0 ? (
-                          <span className="text-red-600 font-medium">{shortage}개</span>
+                        <span className="text-green-600 font-medium">{goodCount}개</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {badCount > 0 ? (
+                          <span className="text-red-600 font-medium">{badCount}개</span>
                         ) : (
-                          <span className="text-green-600">없음</span>
+                          <span className="text-muted-foreground">0개</span>
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -485,7 +516,7 @@ export default function EquipmentStatus() {
               })}
               {(!statusRecords || statusRecords.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     등록된 팀별 현황이 없습니다. 팀을 선택하고 현황을 등록해주세요.
                   </TableCell>
                 </TableRow>
