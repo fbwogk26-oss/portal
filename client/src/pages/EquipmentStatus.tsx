@@ -198,12 +198,16 @@ export default function EquipmentStatus() {
       ? aggregatedData.filter(i => i.category === selectedCategory)
       : aggregatedData;
     
+    const goodQty = items.filter(i => i.status === "양호").reduce((sum, i) => sum + (i.quantity || 0), 0);
+    const badQty = items.filter(i => i.status === "불량").reduce((sum, i) => sum + (i.quantity || 0), 0);
+    const registeredQty = goodQty + badQty;
+    
     return {
       total: items.length,
       totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
-      registeredQty: items.filter(i => i.status === "등록").reduce((sum, i) => sum + (i.quantity || 0), 0),
-      goodQty: items.filter(i => i.status === "양호").reduce((sum, i) => sum + (i.quantity || 0), 0),
-      badQty: items.filter(i => i.status === "불량").reduce((sum, i) => sum + (i.quantity || 0), 0),
+      registeredQty,
+      goodQty,
+      badQty,
     };
   }, [aggregatedData, selectedCategory]);
 
@@ -211,13 +215,17 @@ export default function EquipmentStatus() {
     const uniqueNames = Array.from(new Set(aggregatedData.map(i => i.name)));
     return uniqueNames.map(name => {
       const items = aggregatedData.filter(i => i.name === name);
+      const goodQty = items.filter(i => i.status === "양호").reduce((sum, i) => sum + (i.quantity || 0), 0);
+      const badQty = items.filter(i => i.status === "불량").reduce((sum, i) => sum + (i.quantity || 0), 0);
+      const registeredQty = goodQty + badQty;
+      
       return {
         name,
         category: items[0]?.category || "기타품목",
         totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
-        registeredQty: items.filter(i => i.status === "등록").reduce((sum, i) => sum + (i.quantity || 0), 0),
-        goodQty: items.filter(i => i.status === "양호").reduce((sum, i) => sum + (i.quantity || 0), 0),
-        badQty: items.filter(i => i.status === "불량").reduce((sum, i) => sum + (i.quantity || 0), 0),
+        registeredQty,
+        goodQty,
+        badQty,
       };
     });
   }, [aggregatedData]);
