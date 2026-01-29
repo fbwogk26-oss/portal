@@ -102,6 +102,7 @@ function CircularProgress({ value, max, color, label, size = 120 }: { value: num
 
 function EquipmentListItem({ 
   name, 
+  totalQuantity,
   registered, 
   good, 
   bad, 
@@ -110,6 +111,7 @@ function EquipmentListItem({
   icon: Icon
 }: { 
   name: string; 
+  totalQuantity: number;
   registered: number; 
   good: number; 
   bad: number; 
@@ -133,11 +135,14 @@ function EquipmentListItem({
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{name}</p>
         <p className="text-sm">
+          <span className="text-foreground font-semibold">{totalQuantity}개</span>
+          <span className="text-muted-foreground"> (</span>
           <span className="text-blue-600">{registered}</span>
           <span className="text-muted-foreground"> / </span>
           <span className="text-green-600">{good}</span>
           <span className="text-muted-foreground"> / </span>
           <span className="text-red-600">{bad}</span>
+          <span className="text-muted-foreground">)</span>
         </p>
       </div>
     </motion.div>
@@ -191,6 +196,7 @@ export default function EquipmentStatus() {
     
     return {
       total: items.length,
+      totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
       registered: items.filter(i => i.status === "등록").length,
       good: items.filter(i => i.status === "양호").length,
       bad: items.filter(i => i.status === "불량").length,
@@ -204,6 +210,7 @@ export default function EquipmentStatus() {
       return {
         name,
         category: items[0]?.category || "기타품목",
+        totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
         registered: items.filter(i => i.status === "등록").length,
         good: items.filter(i => i.status === "양호").length,
         bad: items.filter(i => i.status === "불량").length,
@@ -382,6 +389,7 @@ export default function EquipmentStatus() {
           <CardContent className="flex-1 overflow-y-auto p-2">
             <EquipmentListItem
               name="전체"
+              totalQuantity={categoryStats.totalQuantity}
               registered={categoryStats.registered}
               good={categoryStats.good}
               bad={categoryStats.bad}
@@ -394,6 +402,7 @@ export default function EquipmentStatus() {
               <EquipmentListItem
                 key={idx}
                 name={item.name}
+                totalQuantity={item.totalQuantity}
                 registered={item.registered}
                 good={item.good}
                 bad={item.bad}
