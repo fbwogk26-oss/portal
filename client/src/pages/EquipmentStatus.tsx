@@ -3,28 +3,22 @@ import { useLockStatus } from "@/hooks/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HardHat, Plus, Trash2, Building2, ChevronLeft, Save, Package, Shield, Wrench, Box, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { HardHat, Plus, Trash2, ChevronLeft, Save, Shield, Wrench, Box, Edit2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "wouter";
 
 const TEAMS = ["동대구운용팀", "서대구운용팀", "남대구운용팀", "포항운용팀", "안동운용팀", "구미운용팀", "문경운용팀"];
 
 const CATEGORIES = [
-  { id: "보호구", label: "보호구", icon: Shield, color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
-  { id: "안전용품", label: "안전용품", icon: Wrench, color: "text-green-600 bg-green-50 dark:bg-green-900/20" },
-  { id: "기타품목", label: "기타품목", icon: Box, color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
+  { id: "보호구", label: "보호구", icon: Shield },
+  { id: "안전용품", label: "안전용품", icon: Wrench },
+  { id: "기타품목", label: "기타품목", icon: Box },
 ];
 
-const STATUS_OPTIONS = [
-  { id: "등록", label: "등록", color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20", icon: CheckCircle },
-  { id: "양호", label: "양호", color: "text-green-600 bg-green-50 dark:bg-green-900/20", icon: CheckCircle },
-  { id: "불량", label: "불량", color: "text-red-600 bg-red-50 dark:bg-red-900/20", icon: XCircle },
-];
+const STATUS_OPTIONS = ["등록", "양호", "불량"];
 
 const DEFAULT_EQUIPMENT_LIST = [
   { name: "안전모(일반)", quantity: 0, category: "보호구", status: "등록" },
@@ -58,21 +52,169 @@ interface EquipmentItem {
   status: string;
 }
 
+interface TeamData {
+  team: string;
+  items: EquipmentItem[];
+  lastUpdated?: string;
+}
+
+function CircularProgress({ value, max, color, label, size = 120 }: { value: number; max: number; color: string; label: string; size?: number }) {
+  const percentage = max > 0 ? (value / max) * 100 : 0;
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            className="text-muted/20"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className="transition-all duration-500"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-3xl font-bold">{value}</span>
+        </div>
+      </div>
+      <span className="mt-2 text-sm font-medium text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function EquipmentListItem({ 
+  name, 
+  registered, 
+  good, 
+  bad, 
+  isSelected, 
+  onClick,
+  icon: Icon
+}: { 
+  name: string; 
+  registered: number; 
+  good: number; 
+  bad: number; 
+  isSelected: boolean; 
+  onClick: () => void;
+  icon?: any;
+}) {
+  return (
+    <motion.div
+      onClick={onClick}
+      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+        isSelected 
+          ? "bg-primary/10 border-l-4 border-primary" 
+          : "hover:bg-muted/50"
+      }`}
+      whileHover={{ x: 4 }}
+    >
+      <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
+        {Icon ? <Icon className="w-5 h-5 text-muted-foreground" /> : <HardHat className="w-5 h-5 text-muted-foreground" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium truncate">{name}</p>
+        <p className="text-sm">
+          <span className="text-blue-600">{registered}</span>
+          <span className="text-muted-foreground"> / </span>
+          <span className="text-green-600">{good}</span>
+          <span className="text-muted-foreground"> / </span>
+          <span className="text-red-600">{bad}</span>
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function EquipmentStatus() {
   const { data: statusRecords, isLoading } = useNotices("equip_status");
   const { mutate: createRecord, isPending: isCreating } = useCreateNotice();
-  const { mutate: deleteRecord } = useDeleteNotice();
   const { mutate: updateRecord, isPending: isUpdating } = useUpdateNotice();
+  const { mutate: deleteRecord } = useDeleteNotice();
   const { data: lockData } = useLockStatus();
   const isLocked = lockData?.isLocked;
   const { toast } = useToast();
 
   const [selectedTeam, setSelectedTeam] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>(DEFAULT_EQUIPMENT_LIST);
+  const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("보호구");
-  const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string>("all");
+
+  const allTeamsData = useMemo(() => {
+    if (!statusRecords) return [];
+    return statusRecords.map(record => {
+      try {
+        return JSON.parse(record.content) as TeamData;
+      } catch {
+        return null;
+      }
+    }).filter(Boolean) as TeamData[];
+  }, [statusRecords]);
+
+  const aggregatedData = useMemo(() => {
+    const allItems: EquipmentItem[] = [];
+    allTeamsData.forEach(team => {
+      if (team.items) {
+        team.items.forEach(item => {
+          allItems.push({ ...item, category: item.category || "기타품목", status: item.status || "등록" });
+        });
+      }
+    });
+    return allItems;
+  }, [allTeamsData]);
+
+  const categoryStats = useMemo(() => {
+    const items = selectedCategory 
+      ? aggregatedData.filter(i => i.category === selectedCategory)
+      : aggregatedData;
+    
+    return {
+      total: items.length,
+      registered: items.filter(i => i.status === "등록").length,
+      good: items.filter(i => i.status === "양호").length,
+      bad: items.filter(i => i.status === "불량").length,
+    };
+  }, [aggregatedData, selectedCategory]);
+
+  const equipmentCategories = useMemo(() => {
+    const uniqueNames = Array.from(new Set(aggregatedData.map(i => i.name)));
+    return uniqueNames.map(name => {
+      const items = aggregatedData.filter(i => i.name === name);
+      return {
+        name,
+        category: items[0]?.category || "기타품목",
+        registered: items.filter(i => i.status === "등록").length,
+        good: items.filter(i => i.status === "양호").length,
+        bad: items.filter(i => i.status === "불량").length,
+      };
+    });
+  }, [aggregatedData]);
+
+  const filteredCategories = useMemo(() => {
+    if (!selectedCategory) return equipmentCategories;
+    return equipmentCategories.filter(e => e.category === selectedCategory);
+  }, [equipmentCategories, selectedCategory]);
 
   const teamRecord = statusRecords?.find(r => {
     try {
@@ -100,7 +242,7 @@ export default function EquipmentStatus() {
         setEquipmentList(DEFAULT_EQUIPMENT_LIST);
         setEditingRecordId(null);
       }
-    } else {
+    } else if (selectedTeam) {
       setEquipmentList(DEFAULT_EQUIPMENT_LIST);
       setEditingRecordId(null);
     }
@@ -117,15 +259,15 @@ export default function EquipmentStatus() {
     setEquipmentList(newList);
   };
 
-  const handleCategoryChange = (index: number, category: string) => {
-    const newList = [...equipmentList];
-    newList[index].category = category;
-    setEquipmentList(newList);
-  };
-
   const handleStatusChange = (index: number, status: string) => {
     const newList = [...equipmentList];
     newList[index].status = status;
+    setEquipmentList(newList);
+  };
+
+  const handleCategoryChange = (index: number, category: string) => {
+    const newList = [...equipmentList];
+    newList[index].category = category;
     setEquipmentList(newList);
   };
 
@@ -161,370 +303,275 @@ export default function EquipmentStatus() {
       updateRecord({ id: editingRecordId, title: `${selectedTeam} 보호구 현황`, content: contentData }, {
         onSuccess: () => {
           toast({ title: "저장 완료", description: `${selectedTeam} 보호구 현황이 업데이트되었습니다.` });
+          setEditMode(false);
         }
       });
     } else {
       createRecord({ title: `${selectedTeam} 보호구 현황`, content: contentData, category: "equip_status" }, {
         onSuccess: () => {
           toast({ title: "등록 완료", description: `${selectedTeam} 보호구 현황이 등록되었습니다.` });
+          setEditMode(false);
         }
       });
     }
   };
-
-  const handleDelete = (id: number) => {
-    if (confirm("이 팀의 보호구 현황을 삭제하시겠습니까?")) {
-      deleteRecord(id, {
-        onSuccess: () => {
-          setEditingRecordId(null);
-          setEquipmentList(DEFAULT_EQUIPMENT_LIST);
-          toast({ title: "삭제 완료" });
-        }
-      });
-    }
-  };
-
-  const getStatusInfo = (status: string) => {
-    return STATUS_OPTIONS.find(s => s.id === status) || STATUS_OPTIONS[0];
-  };
-
-  const getCategoryInfo = (categoryId: string) => {
-    return CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[2];
-  };
-
-  const filteredEquipmentList = filterCategory === "all" 
-    ? equipmentList 
-    : equipmentList.filter(item => item.category === filterCategory);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/equipment">
           <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-back">
             <ChevronLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <div>
-          <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-3">
-            <div className="bg-amber-100 p-2 rounded-xl text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-              <Building2 className="w-8 h-8" />
-            </div>
-            팀별 보호구 현황
-          </h2>
-          <p className="text-muted-foreground mt-2">각 팀의 안전보호구 보유 수량 및 상태를 관리합니다.</p>
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold">등록 현황</h2>
+          <p className="text-sm text-muted-foreground">
+            <span className="text-blue-600">등록</span> / <span className="text-green-600">양호</span> / <span className="text-red-600">불량</span>
+          </p>
         </div>
+        <Select value={selectedTeam} onValueChange={(val) => { setSelectedTeam(val); setEditMode(false); }}>
+          <SelectTrigger className="w-[200px]" data-testid="select-team">
+            <SelectValue placeholder="팀 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            {TEAMS.map(team => (
+              <SelectItem key={team} value={team}>{team}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedTeam && selectedTeam !== "all" && (
+          <Button 
+            variant={editMode ? "default" : "outline"}
+            onClick={() => setEditMode(!editMode)}
+            className="gap-2"
+            data-testid="button-edit-mode"
+          >
+            <Edit2 className="w-4 h-4" />
+            {editMode ? "편집 중" : "편집"}
+          </Button>
+        )}
       </div>
 
-      <Card className="glass-card overflow-hidden border-amber-200 dark:border-amber-900/30">
-        <CardHeader className="bg-amber-50/50 dark:bg-amber-900/10 border-b border-amber-100 dark:border-amber-900/20">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Package className="w-5 h-5 text-amber-600" />
-            팀 선택 및 현황 관리
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 space-y-6">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">팀 선택</label>
-              <Select value={selectedTeam} onValueChange={setSelectedTeam} disabled={isLocked}>
-                <SelectTrigger data-testid="select-team" className="w-full md:w-[280px]">
-                  <SelectValue placeholder="팀을 선택하세요" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-1 max-h-[600px] overflow-hidden flex flex-col">
+          <CardHeader className="border-b pb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button 
+                variant={!selectedCategory ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+              >
+                전체
+              </Button>
+              {CATEGORIES.map(cat => (
+                <Button 
+                  key={cat.id}
+                  variant={selectedCategory === cat.id ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className="gap-1"
+                >
+                  <cat.icon className="w-3 h-3" />
+                  {cat.label}
+                </Button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto p-2">
+            <EquipmentListItem
+              name="전체"
+              registered={categoryStats.registered}
+              good={categoryStats.good}
+              bad={categoryStats.bad}
+              isSelected={!selectedCategory}
+              onClick={() => setSelectedCategory(null)}
+              icon={HardHat}
+            />
+            <div className="border-t my-2" />
+            {filteredCategories.map((item, idx) => (
+              <EquipmentListItem
+                key={idx}
+                name={item.name}
+                registered={item.registered}
+                good={item.good}
+                bad={item.bad}
+                isSelected={false}
+                onClick={() => {}}
+              />
+            ))}
+            {filteredCategories.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                등록된 보호구가 없습니다.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="border-b">
+            <CardTitle className="text-lg">
+              {selectedCategory || "전체"} 현황
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-3 gap-8 mb-8">
+              <CircularProgress 
+                value={categoryStats.registered} 
+                max={categoryStats.total || 1} 
+                color="#3b82f6" 
+                label="등록"
+                size={140}
+              />
+              <CircularProgress 
+                value={categoryStats.good} 
+                max={categoryStats.total || 1} 
+                color="#22c55e" 
+                label="양호"
+                size={140}
+              />
+              <CircularProgress 
+                value={categoryStats.bad} 
+                max={categoryStats.total || 1} 
+                color="#ef4444" 
+                label="불량"
+                size={140}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">
+              <div>
+                <div className="text-3xl font-bold text-blue-600">{categoryStats.registered}</div>
+                <div className="text-sm text-muted-foreground">등록</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-green-600">{categoryStats.good}</div>
+                <div className="text-sm text-muted-foreground">양호</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-red-600">{categoryStats.bad}</div>
+                <div className="text-sm text-muted-foreground">불량</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {editMode && selectedTeam && selectedTeam !== "all" && (
+        <Card className="border-amber-200 dark:border-amber-900/30">
+          <CardHeader className="bg-amber-50/50 dark:bg-amber-900/10 border-b flex flex-row items-center justify-between gap-4">
+            <CardTitle className="text-lg">{selectedTeam} 보호구 편집</CardTitle>
+            <Button 
+              onClick={handleSave} 
+              disabled={isLocked || isCreating || isUpdating}
+              className="bg-amber-600 hover:bg-amber-700 text-white gap-2"
+              data-testid="button-save"
+            >
+              <Save className="w-4 h-4" />
+              {isCreating || isUpdating ? "저장 중..." : "저장"}
+            </Button>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            <div className="p-3 bg-muted/30 rounded-lg border flex flex-wrap gap-2 items-center">
+              <Select value={newItemCategory} onValueChange={setNewItemCategory}>
+                <SelectTrigger className="w-[140px]" data-testid="select-new-category">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TEAMS.map(team => (
-                    <SelectItem key={team} value={team}>{team}</SelectItem>
+                  {CATEGORIES.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <Input 
+                placeholder="새 용품명" 
+                value={newItemName} 
+                onChange={e => setNewItemName(e.target.value)}
+                className="flex-1 min-w-[200px]"
+                data-testid="input-new-item"
+                onKeyDown={e => e.key === 'Enter' && handleAddItem()}
+              />
+              <Button onClick={handleAddItem} disabled={!newItemName.trim()} className="gap-1" data-testid="button-add-item">
+                <Plus className="w-4 h-4" /> 추가
+              </Button>
             </div>
-            {selectedTeam && (
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleSave} 
-                  disabled={isLocked || isCreating || isUpdating} 
-                  className="bg-amber-600 hover:bg-amber-700 text-white gap-2"
-                  data-testid="button-save-status"
-                >
-                  <Save className="w-4 h-4" />
-                  {isCreating || isUpdating ? "저장 중..." : "저장하기"}
-                </Button>
-                {editingRecordId && (
-                  <Button 
-                    variant="destructive"
-                    onClick={() => handleDelete(editingRecordId)}
-                    disabled={isLocked}
-                    data-testid="button-delete-status"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
 
-          {selectedTeam && (
-            <>
-              <div className="p-4 bg-muted/30 rounded-lg border">
-                <label className="text-sm font-medium mb-3 block">새 용품 추가</label>
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1">
-                    <Select value={newItemCategory} onValueChange={setNewItemCategory}>
-                      <SelectTrigger data-testid="select-new-category" className="w-full md:w-[180px]">
-                        <SelectValue placeholder="구분 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            <div className="flex items-center gap-2">
-                              <cat.icon className="w-4 h-4" />
-                              {cat.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex-[2]">
-                    <Input 
-                      placeholder="용품명 입력" 
-                      value={newItemName} 
-                      onChange={e => setNewItemName(e.target.value)}
-                      disabled={isLocked}
-                      data-testid="input-new-item"
-                      onKeyDown={e => e.key === 'Enter' && handleAddItem()}
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleAddItem} 
-                    disabled={isLocked || !newItemName.trim()}
-                    className="gap-2"
-                    data-testid="button-add-item"
-                  >
-                    <Plus className="w-4 h-4" /> 추가
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium">구분 필터:</span>
-                <Button 
-                  variant={filterCategory === "all" ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setFilterCategory("all")}
-                >
-                  전체
-                </Button>
-                {CATEGORIES.map(cat => (
-                  <Button 
-                    key={cat.id}
-                    variant={filterCategory === cat.id ? "default" : "outline"} 
-                    size="sm"
-                    onClick={() => setFilterCategory(cat.id)}
-                    className="gap-1"
-                  >
-                    <cat.icon className="w-3 h-3" />
-                    {cat.label}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="font-bold w-12 text-center">#</TableHead>
-                      <TableHead className="font-bold w-32">구분</TableHead>
-                      <TableHead className="font-bold">용품명</TableHead>
-                      <TableHead className="font-bold w-24 text-center">수량</TableHead>
-                      <TableHead className="font-bold w-28 text-center">상태</TableHead>
-                      <TableHead className="w-16"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <AnimatePresence>
-                      {filteredEquipmentList.map((item, index) => {
-                        const originalIndex = equipmentList.findIndex(e => e.name === item.name);
-                        const statusInfo = getStatusInfo(item.status);
-                        return (
-                          <motion.tr
-                            key={`${item.name}-${index}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="group hover:bg-muted/20"
+            <div className="border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="p-2 text-left font-medium">구분</th>
+                    <th className="p-2 text-left font-medium">용품명</th>
+                    <th className="p-2 text-center font-medium w-24">수량</th>
+                    <th className="p-2 text-center font-medium w-28">상태</th>
+                    <th className="p-2 w-12"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {equipmentList.map((item, index) => (
+                    <tr key={index} className="border-t hover:bg-muted/20">
+                      <td className="p-2">
+                        <Select value={item.category} onValueChange={val => handleCategoryChange(index, val)}>
+                          <SelectTrigger className="h-8 text-xs w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CATEGORIES.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="p-2 font-medium">{item.name}</td>
+                      <td className="p-2 text-center">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.quantity}
+                          onChange={e => handleQuantityChange(index, e.target.value)}
+                          className="w-16 mx-auto text-center h-8"
+                          data-testid={`input-qty-${index}`}
+                        />
+                      </td>
+                      <td className="p-2 text-center">
+                        <Select value={item.status} onValueChange={val => handleStatusChange(index, val)}>
+                          <SelectTrigger 
+                            className={`h-8 text-xs w-20 mx-auto ${
+                              item.status === "양호" ? "text-green-600 bg-green-50" : 
+                              item.status === "불량" ? "text-red-600 bg-red-50" : 
+                              "text-blue-600 bg-blue-50"
+                            }`}
+                            data-testid={`select-status-${index}`}
                           >
-                            <TableCell className="text-center text-muted-foreground font-mono">
-                              {originalIndex + 1}
-                            </TableCell>
-                            <TableCell>
-                              <Select 
-                                value={item.category} 
-                                onValueChange={(val) => handleCategoryChange(originalIndex, val)}
-                                disabled={isLocked}
-                              >
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-category-${originalIndex}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {CATEGORIES.map(cat => (
-                                    <SelectItem key={cat.id} value={cat.id}>
-                                      <div className="flex items-center gap-1">
-                                        <cat.icon className="w-3 h-3" />
-                                        {cat.label}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell className="text-center">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={item.quantity}
-                                onChange={e => handleQuantityChange(originalIndex, e.target.value)}
-                                disabled={isLocked}
-                                className="w-20 mx-auto text-center"
-                                data-testid={`input-quantity-${originalIndex}`}
-                              />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Select 
-                                value={item.status} 
-                                onValueChange={(val) => handleStatusChange(originalIndex, val)}
-                                disabled={isLocked}
-                              >
-                                <SelectTrigger 
-                                  className={`h-8 text-xs w-24 mx-auto ${statusInfo.color}`} 
-                                  data-testid={`select-status-${originalIndex}`}
-                                >
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {STATUS_OPTIONS.map(opt => (
-                                    <SelectItem key={opt.id} value={opt.id}>
-                                      <div className={`flex items-center gap-1 ${opt.color}`}>
-                                        <opt.icon className="w-3 h-3" />
-                                        {opt.label}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveItem(originalIndex)}
-                                disabled={isLocked}
-                                className="opacity-0 group-hover:opacity-100"
-                                data-testid={`button-remove-item-${originalIndex}`}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </TableCell>
-                          </motion.tr>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                  <span>등록</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                  <span>양호</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                  <span>불량</span>
-                </div>
-              </div>
-            </>
-          )}
-
-          {!selectedTeam && (
-            <div className="text-center py-12 text-muted-foreground">
-              <HardHat className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>팀을 선택하면 보호구 현황을 확인하고 수정할 수 있습니다.</p>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_OPTIONS.map(opt => (
+                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="p-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveItem(index)}
+                          className="h-8 w-8"
+                          data-testid={`button-remove-${index}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-lg border-border/50 overflow-hidden">
-        <CardHeader className="bg-muted/30 border-b">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <HardHat className="w-5 h-5 text-amber-600" />
-            전체 팀 현황 요약
-          </CardTitle>
-        </CardHeader>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="font-bold">팀명</TableHead>
-                <TableHead className="font-bold text-center">보호구</TableHead>
-                <TableHead className="font-bold text-center">안전용품</TableHead>
-                <TableHead className="font-bold text-center">기타품목</TableHead>
-                <TableHead className="font-bold text-center">양호</TableHead>
-                <TableHead className="font-bold text-center">불량</TableHead>
-                <TableHead className="font-bold">최종 수정일</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statusRecords?.map((record) => {
-                try {
-                  const parsed = JSON.parse(record.content);
-                  const items = parsed.items || [];
-                  const protectiveCount = items.filter((i: EquipmentItem) => (i.category || getCategoryFromName(i.name)) === "보호구").length;
-                  const safetyCount = items.filter((i: EquipmentItem) => (i.category || getCategoryFromName(i.name)) === "안전용품").length;
-                  const otherCount = items.filter((i: EquipmentItem) => (i.category || getCategoryFromName(i.name)) === "기타품목").length;
-                  const goodCount = items.filter((i: EquipmentItem) => i.status === "양호").length;
-                  const badCount = items.filter((i: EquipmentItem) => i.status === "불량").length;
-                  return (
-                    <TableRow key={record.id} className="hover:bg-muted/20">
-                      <TableCell className="font-medium">{parsed.team}</TableCell>
-                      <TableCell className="text-center">{protectiveCount}종</TableCell>
-                      <TableCell className="text-center">{safetyCount}종</TableCell>
-                      <TableCell className="text-center">{otherCount}종</TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-green-600 font-medium">{goodCount}개</span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {badCount > 0 ? (
-                          <span className="text-red-600 font-medium">{badCount}개</span>
-                        ) : (
-                          <span className="text-muted-foreground">0개</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {parsed.lastUpdated ? format(new Date(parsed.lastUpdated), "yyyy-MM-dd HH:mm") : "-"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                } catch {
-                  return null;
-                }
-              })}
-              {(!statusRecords || statusRecords.length === 0) && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    등록된 팀별 현황이 없습니다. 팀을 선택하고 현황을 등록해주세요.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
