@@ -89,7 +89,9 @@ export default function AccessRequest() {
     }));
   };
 
-  const handleAdd = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAdd = async () => {
     if (!formData.visitPurpose) {
       toast({ variant: "destructive", title: "방문목적을 입력해주세요" });
       return;
@@ -107,8 +109,17 @@ export default function AccessRequest() {
       people: validPeople,
     });
     
-    createMaterial({ title, content, category: "access" }, {
-      onSuccess: () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/access/submit-with-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, category: "access" }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
         setFormData({
           visitPeriodStartDate: "",
           visitPeriodStartTime: "09:00",
@@ -121,9 +132,30 @@ export default function AccessRequest() {
           supervisorPhone: "",
           people: [{ ...emptyPerson }],
         });
-        toast({ title: "신청 완료", description: "출입신청이 등록되었습니다." });
+        
+        if (result.emailSent) {
+          toast({ 
+            title: "신청 완료", 
+            description: "출입신청이 등록되고 이메일이 전송되었습니다." 
+          });
+        } else {
+          toast({ 
+            title: "신청 완료", 
+            description: result.emailError 
+              ? `출입신청이 등록되었습니다. (이메일 전송 실패: ${result.emailError})`
+              : "출입신청이 등록되었습니다."
+          });
+        }
+        window.location.reload();
+      } else {
+        throw new Error(result.message || 'Submit failed');
       }
-    });
+    } catch (error) {
+      console.error('Submit error:', error);
+      toast({ variant: "destructive", title: "신청 등록 실패" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -391,11 +423,11 @@ export default function AccessRequest() {
           <div className="flex justify-end pt-2">
             <Button 
               onClick={handleAdd} 
-              disabled={isLocked || isCreating || !formData.visitPurpose} 
+              disabled={isLocked || isCreating || isSubmitting || !formData.visitPurpose} 
               className="bg-purple-600 hover:bg-purple-700 text-white gap-2" 
               data-testid="button-submit-access"
             >
-              <Plus className="w-4 h-4" /> 신청 등록
+              <Plus className="w-4 h-4" /> {isSubmitting ? "등록 중..." : "신청 등록"}
             </Button>
           </div>
         </CardContent>
