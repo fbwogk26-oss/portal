@@ -85,6 +85,15 @@ export const api = {
         400: errorSchemas.validation,
       },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/notices/:id',
+      input: insertNoticeSchema.partial(),
+      responses: {
+        200: z.custom<typeof notices.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
     delete: {
       method: 'DELETE' as const,
       path: '/api/notices/:id',
