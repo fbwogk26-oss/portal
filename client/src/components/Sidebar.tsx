@@ -6,7 +6,9 @@ import {
   GraduationCap, 
   DoorOpen,
   Menu,
-  X
+  X,
+  Car,
+  HardHat
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -18,6 +20,8 @@ const NAV_ITEMS = [
   { label: "안전수칙", href: "/rules", icon: ShieldCheck },
   { label: "공지/알림", href: "/notices", icon: Bell },
   { label: "안전교육", href: "/education", icon: GraduationCap },
+  { label: "차량관리", href: "/vehicle", icon: Car },
+  { label: "안전보호구 관리", href: "/equipment", icon: HardHat },
   { label: "출입신청(효목)", href: "/access", icon: DoorOpen },
 ];
 

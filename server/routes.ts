@@ -169,6 +169,39 @@ export async function registerRoutes(
     res.json({ imageUrl });
   });
 
+  // === FILE UPLOAD (Excel, etc.) ===
+  const fileUpload = multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => cb(null, uploadDir),
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, `file-${uniqueSuffix}${ext}`);
+      }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/octet-stream'
+      ];
+      if (allowedMimes.includes(file.mimetype) || file.originalname.match(/\.(xlsx|xls)$/i)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only Excel files are allowed'));
+      }
+    }
+  });
+
+  app.post('/api/upload/file', fileUpload.single('file'), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ fileUrl, fileName: req.file.originalname });
+  });
+
   // === NOTICES ===
   app.get(api.notices.list.path, async (req, res) => {
     const category = req.query.category as string;

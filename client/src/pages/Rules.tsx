@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShieldCheck, Plus, Trash2, AlertCircle, Search } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ShieldCheck, Plus, Trash2, AlertCircle, Search, ImagePlus, X } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,9 @@ export default function Rules() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredRules = useMemo(() => {
     if (!rules) return [];
@@ -32,12 +35,38 @@ export default function Rules() {
     );
   }, [rules, searchQuery]);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl);
+        toast({ title: "이미지 업로드 완료" });
+      }
+    } catch (err) {
+      toast({ variant: "destructive", title: "업로드 실패" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleAdd = () => {
     if (!title || !content) return;
-    createRule({ title, content, category: "rule" }, {
+    createRule({ title, content, category: "rule", imageUrl: imageUrl || undefined }, {
       onSuccess: () => {
         setTitle("");
         setContent("");
+        setImageUrl(null);
         toast({ title: "수칙 추가 완료", description: "새로운 안전 수칙이 게시되었습니다." });
       }
     });
@@ -73,7 +102,6 @@ export default function Rules() {
         </div>
       </div>
 
-      {/* Input Form */}
       <Card className="glass-card overflow-hidden">
         <div className="p-1 bg-primary/5 border-b border-primary/10">
            <div className="px-4 py-1 text-xs font-semibold text-primary uppercase tracking-wider">새 수칙 등록</div>
@@ -85,6 +113,7 @@ export default function Rules() {
             onChange={e => setTitle(e.target.value)}
             disabled={isLocked}
             className="font-medium"
+            data-testid="input-rule-title"
           />
           <Textarea 
             placeholder="안전 수칙에 대한 상세 설명을 입력하세요..." 
@@ -92,9 +121,46 @@ export default function Rules() {
             onChange={e => setContent(e.target.value)}
             disabled={isLocked}
             className="min-h-[100px]"
+            data-testid="input-rule-content"
           />
+          
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            className="hidden"
+            data-testid="input-rule-image"
+          />
+          
+          {imageUrl ? (
+            <div className="relative inline-block">
+              <img src={imageUrl} alt="미리보기" className="max-h-32 rounded-lg border" />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6"
+                onClick={() => setImageUrl(null)}
+                data-testid="button-remove-rule-image"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLocked || isUploading}
+              className="gap-2"
+              data-testid="button-add-rule-image"
+            >
+              <ImagePlus className="w-4 h-4" />
+              {isUploading ? "업로드 중..." : "이미지 추가"}
+            </Button>
+          )}
+          
           <div className="flex justify-end">
-            <Button onClick={handleAdd} disabled={isLocked || isCreating || !title} className="gap-2">
+            <Button onClick={handleAdd} disabled={isLocked || isCreating || !title} className="gap-2" data-testid="button-add-rule">
               <Plus className="w-4 h-4" /> 수칙 추가
             </Button>
           </div>
@@ -106,7 +172,6 @@ export default function Rules() {
         </CardContent>
       </Card>
 
-      {/* List */}
       <div className="space-y-4">
         {isLoading ? (
           <div className="space-y-4">
@@ -121,6 +186,7 @@ export default function Rules() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="group relative bg-card rounded-2xl p-6 border border-border/50 shadow-sm hover:shadow-md transition-all duration-300"
+                data-testid={`card-rule-${rule.id}`}
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="space-y-2 flex-1">
@@ -131,6 +197,13 @@ export default function Rules() {
                       </span>
                     </div>
                     <p className="text-foreground/80 leading-relaxed">{rule.content}</p>
+                    {rule.imageUrl && (
+                      <img 
+                        src={rule.imageUrl} 
+                        alt="첨부 이미지" 
+                        className="max-w-full max-h-64 rounded-lg border mt-2"
+                      />
+                    )}
                   </div>
                   <Button 
                     variant="ghost" 
@@ -138,6 +211,7 @@ export default function Rules() {
                     className="text-muted-foreground hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => handleDelete(rule.id)}
                     disabled={isLocked}
+                    data-testid={`button-delete-rule-${rule.id}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
