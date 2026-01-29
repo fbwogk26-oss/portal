@@ -358,20 +358,20 @@ export default function VehicleManagement({ embedded = false }: VehicleManagemen
         </div>
       )}
 
-      {!embedded && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      {/* 팀별 현황 - embedded/standalone 모두 표시 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <Card 
           className={`bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:shadow-lg ${filterStatus === "all" ? "ring-2 ring-slate-400 dark:ring-slate-500" : ""}`}
           onClick={() => setFilterStatus("all")}
           data-testid="stat-card-total"
         >
-          <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 bg-slate-200 dark:bg-slate-700 rounded-lg sm:rounded-xl">
-              <Car className="w-4 h-4 sm:w-6 sm:h-6 text-slate-600 dark:text-slate-300" />
+          <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+            <div className="p-1.5 sm:p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+              <Car className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-300" />
             </div>
             <div>
-              <p className="text-lg sm:text-2xl font-bold">{stats.total}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">전체</p>
+              <p className="text-base sm:text-xl font-bold">{stats.total}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">전체</p>
             </div>
           </CardContent>
         </Card>
@@ -380,13 +380,13 @@ export default function VehicleManagement({ embedded = false }: VehicleManagemen
           onClick={() => handleStatClick("운행중")}
           data-testid="stat-card-operating"
         >
-          <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 bg-green-200 dark:bg-green-800 rounded-lg sm:rounded-xl">
-              <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-300" />
+          <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+            <div className="p-1.5 sm:p-2 bg-green-200 dark:bg-green-800 rounded-lg">
+              <CheckCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-green-600 dark:text-green-300" />
             </div>
             <div>
-              <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{stats.operating}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">운행중</p>
+              <p className="text-base sm:text-xl font-bold text-green-700 dark:text-green-400">{stats.operating}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">운행중</p>
             </div>
           </CardContent>
         </Card>
@@ -395,13 +395,13 @@ export default function VehicleManagement({ embedded = false }: VehicleManagemen
           onClick={() => handleStatClick("정비중")}
           data-testid="stat-card-maintenance"
         >
-          <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 bg-amber-200 dark:bg-amber-800 rounded-lg sm:rounded-xl">
-              <Wrench className="w-4 h-4 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-300" />
+          <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+            <div className="p-1.5 sm:p-2 bg-amber-200 dark:bg-amber-800 rounded-lg">
+              <Wrench className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-300" />
             </div>
             <div>
-              <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-400">{stats.maintenance}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">정비중</p>
+              <p className="text-base sm:text-xl font-bold text-amber-700 dark:text-amber-400">{stats.maintenance}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">정비중</p>
             </div>
           </CardContent>
         </Card>
@@ -410,18 +410,17 @@ export default function VehicleManagement({ embedded = false }: VehicleManagemen
           onClick={() => handleStatClick("대기")}
           data-testid="stat-card-idle"
         >
-          <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 bg-blue-200 dark:bg-blue-800 rounded-lg sm:rounded-xl">
-              <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-300" />
+          <CardContent className="p-2 sm:p-3 flex items-center gap-2">
+            <div className="p-1.5 sm:p-2 bg-blue-200 dark:bg-blue-800 rounded-lg">
+              <Shield className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
-              <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.idle}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">대기</p>
+              <p className="text-base sm:text-xl font-bold text-blue-700 dark:text-blue-400">{stats.idle}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">대기</p>
             </div>
           </CardContent>
         </Card>
-        </div>
-      )}
+      </div>
 
       <Card>
         <CardContent className="p-2.5 sm:p-4">
