@@ -45,7 +45,10 @@ export default function Dashboard() {
   const [year, setYear] = useState(2026);
   const [baseVehicleCount, setBaseVehicleCount] = useState(15);
   const [isUploading, setIsUploading] = useState(false);
+  const [vehicleFilterTeam, setVehicleFilterTeam] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const TEAMS = ["동대구운용팀", "서대구운용팀", "남대구운용팀", "포항운용팀", "안동운용팀", "구미운용팀", "문경운용팀", "운용지원팀", "운용계획팀", "사업지원팀", "현장경영팀"];
   
   const { data: teams, isLoading, refetch, isRefetching } = useTeams(year);
   const { data: vehicles } = useVehicles();
@@ -56,16 +59,17 @@ export default function Dashboard() {
   const resetAllTeams = useResetAllTeams();
   const { toast } = useToast();
 
-  // Vehicle stats
+  // Vehicle stats (filtered by team)
   const vehicleStats = useMemo(() => {
     if (!vehicles) return { total: 0, operating: 0, maintenance: 0, idle: 0 };
+    const filtered = vehicleFilterTeam === "all" ? vehicles : vehicles.filter(v => v.team === vehicleFilterTeam);
     return {
-      total: vehicles.length,
-      operating: vehicles.filter(v => v.status === "운행중").length,
-      maintenance: vehicles.filter(v => v.status === "정비중").length,
-      idle: vehicles.filter(v => v.status === "대기").length,
+      total: filtered.length,
+      operating: filtered.filter(v => v.status === "운행중").length,
+      maintenance: filtered.filter(v => v.status === "정비중").length,
+      idle: filtered.filter(v => v.status === "대기").length,
     };
-  }, [vehicles]);
+  }, [vehicles, vehicleFilterTeam]);
 
   // Equipment stats
   const equipmentStats = useMemo(() => {
@@ -481,14 +485,25 @@ export default function Dashboard() {
               className="space-y-4"
             >
               <Card className="shadow-lg border-border/50">
-                <CardHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between">
-                  <div>
+                <CardHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
                     <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                       <Car className="w-5 h-5 text-cyan-500" />
                       차량 관리 현황
                     </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">업무용 차량 현황</CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">
+                      {vehicleFilterTeam === "all" ? "전체 팀" : vehicleFilterTeam.replace('운용팀', '')}
+                    </CardDescription>
                   </div>
+                  <Select value={vehicleFilterTeam} onValueChange={setVehicleFilterTeam}>
+                    <SelectTrigger className="w-[100px] sm:w-[140px] h-8 text-xs" data-testid="select-vehicle-team-filter">
+                      <SelectValue placeholder="팀 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 팀</SelectItem>
+                      {TEAMS.map(t => <SelectItem key={t} value={t}>{t.replace('운용팀', '')}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <Button
                     variant="ghost"
                     size="icon"
