@@ -296,7 +296,7 @@ export async function registerRoutes(
         worksheet.getCell('A3').value = `방문기간 : ${formattedStart} ${startTime} ~ ${formattedEnd} ${endTime}`;
       }
 
-      for (let r = 1; r <= 100; r++) {
+      for (let r = 4; r <= 100; r++) {
         const row = worksheet.getRow(r);
         row.getCell(8).value = null;
         row.getCell(9).value = null;
