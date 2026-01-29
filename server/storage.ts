@@ -17,6 +17,7 @@ export interface IStorage {
 
   // Notices
   getNotices(category?: string): Promise<Notice[]>;
+  getNotice(id: number): Promise<Notice | undefined>;
   createNotice(notice: InsertNotice): Promise<Notice>;
   deleteNotice(id: number): Promise<void>;
 
@@ -57,6 +58,11 @@ export class DatabaseStorage implements IStorage {
       query.where(eq(notices.category, category));
     }
     return await query.orderBy(desc(notices.createdAt));
+  }
+
+  async getNotice(id: number): Promise<Notice | undefined> {
+    const [notice] = await db.select().from(notices).where(eq(notices.id, id));
+    return notice;
   }
 
   async createNotice(insertNotice: InsertNotice): Promise<Notice> {

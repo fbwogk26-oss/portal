@@ -187,10 +187,14 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // === ACCESS REQUEST EXCEL DOWNLOAD ===
-  app.get('/api/access/excel', async (req, res) => {
+  // === ACCESS REQUEST EXCEL DOWNLOAD (Single Item) ===
+  app.get('/api/access/excel/:id', async (req, res) => {
     try {
-      const notices = await storage.getNotices("access");
+      const notice = await storage.getNotice(Number(req.params.id));
+      if (!notice) {
+        return res.status(404).json({ message: "Not found" });
+      }
+
       const templatePath = path.join(process.cwd(), "server/templates/access_template.xlsx");
       
       if (!fs.existsSync(templatePath)) {
@@ -205,6 +209,43 @@ export async function registerRoutes(
         return res.status(500).json({ message: "Worksheet not found" });
       }
 
+      const data = JSON.parse(notice.content);
+
+      const row1Cell = worksheet.getCell('A1');
+      const entranceLocation = data.entranceLocation || '';
+      const visitPurpose = data.visitPurpose || '';
+      row1Cell.value = `kt MOS남부 대구본부  ${visitPurpose}를 위한 출입신청(출입장소: ${entranceLocation})`;
+
+      const supervisorDept = data.supervisorDepartment || '';
+      const supervisorName = data.supervisorName || '';
+      const supervisorPhone = data.supervisorPhone || '';
+      worksheet.getCell('A2').value = `인솔자 : ${supervisorDept} / ${supervisorName} (${supervisorPhone})`;
+
+      const startDate = data.visitPeriodStartDate || '';
+      const startTime = data.visitPeriodStartTime || '';
+      const endDate = data.visitPeriodEndDate || '';
+      const endTime = data.visitPeriodEndTime || '';
+      
+      const formatDateWithDay = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dayName = days[date.getDay()];
+        return `${year}.${month}.${day}(${dayName})`;
+      };
+
+      const formattedStart = formatDateWithDay(startDate);
+      const formattedEnd = formatDateWithDay(endDate);
+      
+      if (startDate === endDate || !endDate) {
+        worksheet.getCell('A3').value = `방문기간 : ${formattedStart} ${startTime} ~ ${endTime}`;
+      } else {
+        worksheet.getCell('A3').value = `방문기간 : ${formattedStart} ${startTime} ~ ${formattedEnd} ${endTime}`;
+      }
+
       const templateRow = worksheet.getRow(5);
       const templateStyle: any = {};
       for (let col = 1; col <= 8; col++) {
@@ -217,46 +258,31 @@ export async function registerRoutes(
         };
       }
 
+      const people = data.people || [];
       let rowIndex = 5;
-      let seqNum = 1;
       
-      for (const notice of notices) {
-        try {
-          const data = JSON.parse(notice.content);
-          const row = worksheet.getRow(rowIndex);
-          
-          row.getCell(1).value = seqNum;
-          row.getCell(2).value = data.department || '';
-          row.getCell(3).value = data.applicantName || '';
-          row.getCell(4).value = data.idNumber || '';
-          row.getCell(5).value = data.phone || '';
-          row.getCell(6).value = '';
-          row.getCell(7).value = data.hasVehicle === '있음' ? data.vehicleNumber : '';
-          row.getCell(8).value = data.visitPurpose || '';
+      for (let i = 0; i < people.length; i++) {
+        const person = people[i];
+        const row = worksheet.getRow(rowIndex);
+        
+        row.getCell(1).value = i + 1;
+        row.getCell(2).value = person.department || '';
+        row.getCell(3).value = person.applicantName || '';
+        row.getCell(4).value = person.idNumber || '';
+        row.getCell(5).value = person.phone || '';
+        row.getCell(6).value = '';
+        row.getCell(7).value = person.hasVehicle === '있음' ? person.vehicleNumber : '';
 
-          for (let col = 1; col <= 8; col++) {
-            const cell = row.getCell(col);
-            if (templateStyle[col].font) cell.font = templateStyle[col].font;
-            if (templateStyle[col].alignment) cell.alignment = templateStyle[col].alignment;
-            if (templateStyle[col].border) cell.border = templateStyle[col].border;
-            if (templateStyle[col].fill) cell.fill = templateStyle[col].fill;
-          }
-          
-          row.commit();
-          rowIndex++;
-          seqNum++;
-        } catch (e) {
-          continue;
+        for (let col = 1; col <= 7; col++) {
+          const cell = row.getCell(col);
+          if (templateStyle[col]?.font) cell.font = templateStyle[col].font;
+          if (templateStyle[col]?.alignment) cell.alignment = templateStyle[col].alignment;
+          if (templateStyle[col]?.border) cell.border = templateStyle[col].border;
+          if (templateStyle[col]?.fill) cell.fill = templateStyle[col].fill;
         }
-      }
-
-      if (notices.length > 0) {
-        try {
-          const firstData = JSON.parse(notices[0].content);
-          const visitStart = firstData.visitPeriodStart || '';
-          const visitEnd = firstData.visitPeriodEnd || '';
-          worksheet.getCell('A3').value = `방문기간 : ${visitStart} ~ ${visitEnd}`;
-        } catch (e) {}
+        
+        row.commit();
+        rowIndex++;
       }
 
       const buffer = await workbook.xlsx.writeBuffer();
