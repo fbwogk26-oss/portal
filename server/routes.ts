@@ -296,7 +296,13 @@ export async function registerRoutes(
         worksheet.getCell('A3').value = `방문기간 : ${formattedStart} ${startTime} ~ ${formattedEnd} ${endTime}`;
       }
 
-      worksheet.spliceColumns(8, 2);
+      for (let r = 1; r <= 100; r++) {
+        const row = worksheet.getRow(r);
+        row.getCell(8).value = null;
+        row.getCell(9).value = null;
+      }
+      worksheet.getColumn(8).width = 0.1;
+      worksheet.getColumn(9).width = 0.1;
 
       const templateRow = worksheet.getRow(5);
       const templateStyle: any = {};
