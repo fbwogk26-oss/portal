@@ -174,62 +174,63 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="h-[280px] pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={orderedTeams} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#1e293b', fontSize: 13, fontWeight: 600 }}
-                      interval={0}
-                    />
-                    <YAxis 
-                      domain={[0, 100]} 
-                      axisLine={false} 
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                    />
-                    <Tooltip 
-                      cursor={{ fill: '#3b82f6', opacity: 0.05 }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl p-4 rounded-xl">
-                              <p className="font-bold text-lg mb-2 border-b pb-1">{data.name}</p>
-                              <div className="space-y-1 text-sm">
-                                <div className="flex justify-between gap-4">
-                                  <span className="text-muted-foreground">안전 점수:</span>
-                                  <span className="font-bold text-primary">{data.totalScore}점</span>
-                                </div>
-                                <div className="flex justify-between gap-4">
-                                  <span className="text-muted-foreground">차량 수:</span>
-                                  <span>{data.vehicleCount}대</span>
+              <CardContent className="pt-4">
+                <div style={{ width: '100%', height: 280, minHeight: 280 }}>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={orderedTeams} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#1e293b', fontSize: 13, fontWeight: 600 }}
+                        interval={0}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        cursor={{ fill: '#3b82f6', opacity: 0.05 }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', padding: 16, borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                                <p style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 8, borderBottom: '1px solid #e5e7eb', paddingBottom: 4 }}>{data.name}</p>
+                                <div style={{ fontSize: 14 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                                    <span style={{ color: '#64748b' }}>안전 점수:</span>
+                                    <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>{data.totalScore}점</span>
+                                  </div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                                    <span style={{ color: '#64748b' }}>차량 수:</span>
+                                    <span>{data.vehicleCount}대</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar 
-                      dataKey="totalScore" 
-                      radius={[6, 6, 0, 0]}
-                      barSize={45}
-                    >
-                      {orderedTeams.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.totalScore >= 90 ? '#10b981' : entry.totalScore >= 80 ? '#f59e0b' : '#ef4444'} 
-                          className="drop-shadow-sm"
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="totalScore" 
+                        radius={[6, 6, 0, 0]}
+                        barSize={45}
+                      >
+                        {orderedTeams.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.totalScore >= 90 ? '#10b981' : entry.totalScore >= 80 ? '#f59e0b' : '#ef4444'} 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
              </Card>
           </div>

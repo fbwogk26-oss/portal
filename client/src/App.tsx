@@ -11,6 +11,8 @@ import Notices from "@/pages/Notices";
 import Education from "@/pages/Education";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SafetyEquipment from "@/pages/SafetyEquipment";
+import EquipmentStatus from "@/pages/EquipmentStatus";
+import EquipmentRequest from "@/pages/EquipmentRequest";
 import AccessRequest from "@/pages/AccessRequest";
 import NotFound from "@/pages/NotFound";
 import { useLocation } from "wouter";
@@ -35,6 +37,8 @@ function Router() {
             <Route path="/education" component={Education} />
             <Route path="/vehicle" component={VehicleManagement} />
             <Route path="/equipment" component={SafetyEquipment} />
+            <Route path="/equipment/status" component={EquipmentStatus} />
+            <Route path="/equipment/request" component={EquipmentRequest} />
             <Route path="/access" component={AccessRequest} />
             <Route component={NotFound} />
           </Switch>

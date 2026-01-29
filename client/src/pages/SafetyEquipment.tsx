@@ -1,14 +1,36 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { HardHat, Building2, ShoppingCart, ArrowRight, FileText, Plus, Trash2, ImagePlus, X, Upload, Download, FileSpreadsheet } from "lucide-react";
+import { Link } from "wouter";
 import { useNotices, useCreateNotice, useDeleteNotice } from "@/hooks/use-notices";
 import { useLockStatus } from "@/hooks/use-settings";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { HardHat, Plus, Trash2, FileText, ImagePlus, X, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+
+const SUBMENU_ITEMS = [
+  {
+    title: "팀별 보호구 현황",
+    description: "각 팀의 안전보호구 보유 및 배포 현황을 확인합니다.",
+    icon: Building2,
+    href: "/equipment/status",
+    bgColor: "bg-amber-100 dark:bg-amber-900/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    borderColor: "border-amber-200 dark:border-amber-900/30 hover:border-amber-400"
+  },
+  {
+    title: "용품 신청",
+    description: "안전보호구 및 용품을 신청합니다.",
+    icon: ShoppingCart,
+    href: "/equipment/request",
+    bgColor: "bg-purple-100 dark:bg-purple-900/30",
+    iconColor: "text-purple-600 dark:text-purple-400",
+    borderColor: "border-purple-200 dark:border-purple-900/30 hover:border-purple-400"
+  }
+];
 
 export default function SafetyEquipment() {
   const { data: materials, isLoading } = useNotices("equipment");
@@ -111,7 +133,7 @@ export default function SafetyEquipment() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-3">
@@ -124,7 +146,32 @@ export default function SafetyEquipment() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {SUBMENU_ITEMS.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <Card className={`group cursor-pointer hover:shadow-lg transition-all duration-300 ${item.borderColor}`} data-testid={`card-submenu-${item.href.split('/').pop()}`}>
+              <CardHeader className="pb-2">
+                <div className={`w-12 h-12 rounded-xl ${item.bgColor} flex items-center justify-center mb-3`}>
+                  <item.icon className={`w-6 h-6 ${item.iconColor}`} />
+                </div>
+                <CardTitle className="flex items-center justify-between">
+                  {item.title}
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </CardTitle>
+                <CardDescription>{item.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
       <Card className="glass-card overflow-hidden border-amber-200 dark:border-amber-900/30">
+        <CardHeader className="bg-amber-50/50 dark:bg-amber-900/10 border-b border-amber-100 dark:border-amber-900/20">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileText className="w-5 h-5 text-amber-600" />
+            자료 등록
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-6 space-y-4">
           <Input 
             placeholder="자료 제목" 
