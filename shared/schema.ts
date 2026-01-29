@@ -48,10 +48,31 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
 });
 
+// === VEHICLES ===
+export const vehicles = pgTable("vehicles", {
+  id: serial("id").primaryKey(),
+  plateNumber: text("plate_number").notNull(),
+  vehicleType: text("vehicle_type").notNull(),
+  model: text("model").notNull(),
+  year: integer("year"),
+  team: text("team").notNull(),
+  driver: text("driver"),
+  contact: text("contact"),
+  status: text("status").notNull().default("운행중"),
+  purchaseDate: text("purchase_date"),
+  inspectionDate: text("inspection_date"),
+  insuranceExpiry: text("insurance_expiry"),
+  mileage: integer("mileage").default(0),
+  notes: text("notes"),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === SCHEMAS ===
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, totalScore: true, rank: true });
 export const insertNoticeSchema = createInsertSchema(notices).omit({ id: true, createdAt: true });
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true });
+export const insertVehicleSchema = createInsertSchema(vehicles).omit({ id: true, createdAt: true });
 
 // === TYPES ===
 export type Team = typeof teams.$inferSelect;
@@ -59,9 +80,13 @@ export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Notice = typeof notices.$inferSelect;
 export type InsertNotice = z.infer<typeof insertNoticeSchema>;
 export type Setting = typeof settings.$inferSelect;
+export type Vehicle = typeof vehicles.$inferSelect;
+export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 
 // Request Types
 export type CreateTeamRequest = InsertTeam;
 export type UpdateTeamRequest = Partial<InsertTeam>;
 export type CreateNoticeRequest = InsertNotice;
+export type CreateVehicleRequest = InsertVehicle;
+export type UpdateVehicleRequest = Partial<InsertVehicle>;
 

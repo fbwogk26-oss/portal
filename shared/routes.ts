@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertTeamSchema, insertNoticeSchema, teams, notices, settings } from './schema';
+import { insertTeamSchema, insertNoticeSchema, insertVehicleSchema, teams, notices, settings, vehicles } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -118,6 +118,41 @@ export const api = {
       responses: {
         200: z.object({ success: z.boolean() }),
         401: errorSchemas.internal,
+      },
+    },
+  },
+  vehicles: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/vehicles',
+      responses: {
+        200: z.array(z.custom<typeof vehicles.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/vehicles',
+      input: insertVehicleSchema,
+      responses: {
+        201: z.custom<typeof vehicles.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/vehicles/:id',
+      input: insertVehicleSchema.partial(),
+      responses: {
+        200: z.custom<typeof vehicles.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/vehicles/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
       },
     },
   },

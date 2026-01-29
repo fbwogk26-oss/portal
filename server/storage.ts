@@ -1,9 +1,10 @@
 import { db } from "./db";
 import {
-  teams, notices, settings,
+  teams, notices, settings, vehicles,
   type Team, type InsertTeam, type UpdateTeamRequest,
   type Notice, type InsertNotice,
-  type Setting
+  type Setting,
+  type Vehicle, type InsertVehicle, type UpdateVehicleRequest
 } from "@shared/schema";
 import { eq, desc, asc } from "drizzle-orm";
 
@@ -25,6 +26,13 @@ export interface IStorage {
   // Settings
   getSetting(key: string): Promise<Setting | undefined>;
   setSetting(key: string, value: string): Promise<Setting>;
+
+  // Vehicles
+  getVehicles(): Promise<Vehicle[]>;
+  getVehicle(id: number): Promise<Vehicle | undefined>;
+  createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
+  updateVehicle(id: number, updates: UpdateVehicleRequest): Promise<Vehicle>;
+  deleteVehicle(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -95,6 +103,30 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(settings).values({ key, value }).returning();
       return created;
     }
+  }
+
+  // === VEHICLES ===
+  async getVehicles(): Promise<Vehicle[]> {
+    return await db.select().from(vehicles).orderBy(desc(vehicles.createdAt));
+  }
+
+  async getVehicle(id: number): Promise<Vehicle | undefined> {
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
+    return vehicle;
+  }
+
+  async createVehicle(insertVehicle: InsertVehicle): Promise<Vehicle> {
+    const [vehicle] = await db.insert(vehicles).values(insertVehicle).returning();
+    return vehicle;
+  }
+
+  async updateVehicle(id: number, updates: UpdateVehicleRequest): Promise<Vehicle> {
+    const [vehicle] = await db.update(vehicles).set(updates).where(eq(vehicles.id, id)).returning();
+    return vehicle;
+  }
+
+  async deleteVehicle(id: number): Promise<void> {
+    await db.delete(vehicles).where(eq(vehicles.id, id));
   }
 }
 
