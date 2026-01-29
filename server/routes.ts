@@ -166,14 +166,19 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid data format" });
       }
       
+      const targetYear = year ?? 2026;
+      const existingTeams = await storage.getTeams(targetYear);
       let updated = 0;
+      
       for (const row of data) {
-        const existingTeams = await storage.getTeams(year || 2026);
+        if (!row.name) continue;
+        
         const team = existingTeams.find(t => t.name === row.name);
         
         if (team) {
-          const updateData = {
-            vehicleCount: row.vehicleCount || team.vehicleCount,
+          const merged = {
+            ...team,
+            vehicleCount: row.vehicleCount ?? team.vehicleCount,
             workAccident: row.workAccident ?? team.workAccident,
             fineSpeed: row.fineSpeed ?? team.fineSpeed,
             fineSignal: row.fineSignal ?? team.fineSignal,
@@ -181,22 +186,33 @@ export async function registerRoutes(
             inspectionMiss: row.inspectionMiss ?? team.inspectionMiss,
             suggestion: row.suggestion ?? team.suggestion,
             activity: row.activity ?? team.activity,
+            vehicleAccidents: team.vehicleAccidents ?? {},
           };
-          const totalScore = calculateScore(updateData);
-          await storage.updateTeam(team.id, { ...updateData, totalScore });
+          const totalScore = calculateScore(merged);
+          await storage.updateTeam(team.id, { 
+            vehicleCount: merged.vehicleCount,
+            workAccident: merged.workAccident,
+            fineSpeed: merged.fineSpeed,
+            fineSignal: merged.fineSignal,
+            fineLane: merged.fineLane,
+            inspectionMiss: merged.inspectionMiss,
+            suggestion: merged.suggestion,
+            activity: merged.activity,
+            totalScore 
+          });
           updated++;
-        } else if (row.name) {
+        } else {
           const newTeam = {
             name: row.name,
-            year: year || 2026,
-            vehicleCount: row.vehicleCount || 0,
-            workAccident: row.workAccident || 0,
-            fineSpeed: row.fineSpeed || 0,
-            fineSignal: row.fineSignal || 0,
-            fineLane: row.fineLane || 0,
-            inspectionMiss: row.inspectionMiss || 0,
-            suggestion: row.suggestion || 0,
-            activity: row.activity || 0,
+            year: targetYear,
+            vehicleCount: row.vehicleCount ?? 0,
+            workAccident: row.workAccident ?? 0,
+            fineSpeed: row.fineSpeed ?? 0,
+            fineSignal: row.fineSignal ?? 0,
+            fineLane: row.fineLane ?? 0,
+            inspectionMiss: row.inspectionMiss ?? 0,
+            suggestion: row.suggestion ?? 0,
+            activity: row.activity ?? 0,
             vehicleAccidents: {},
           };
           const totalScore = calculateScore(newTeam);
