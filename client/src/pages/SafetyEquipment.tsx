@@ -32,7 +32,11 @@ const SUBMENU_ITEMS = [
   }
 ];
 
-export default function SafetyEquipment() {
+interface SafetyEquipmentProps {
+  embedded?: boolean;
+}
+
+export default function SafetyEquipment({ embedded = false }: SafetyEquipmentProps) {
   const { data: materials, isLoading } = useNotices("equipment");
   const { mutate: createMaterial, isPending: isCreating } = useCreateNotice();
   const { mutate: deleteMaterial } = useDeleteNotice();
@@ -133,18 +137,20 @@ export default function SafetyEquipment() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="bg-amber-100 p-2 sm:p-2.5 rounded-lg sm:rounded-xl text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-          <HardHat className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+    <div className={embedded ? "space-y-4" : "max-w-5xl mx-auto space-y-4 sm:space-y-6 md:space-y-8"}>
+      {!embedded && (
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="bg-amber-100 p-2 sm:p-2.5 rounded-lg sm:rounded-xl text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+            <HardHat className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground">
+              안전보호구 관리
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">보호구 관리 및 문서</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground">
-            안전보호구 관리
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">보호구 관리 및 문서</p>
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
         {SUBMENU_ITEMS.map((item) => (

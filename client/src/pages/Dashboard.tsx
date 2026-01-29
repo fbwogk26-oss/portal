@@ -27,11 +27,13 @@ import { Input } from "@/components/ui/input";
 import { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Download, RefreshCw, AlertTriangle, Trophy, AlertCircle, ShieldCheck, RotateCcw, Upload, Car, CheckCircle, Wrench, Shield, HardHat, Settings } from "lucide-react";
+import { Download, RefreshCw, AlertTriangle, Trophy, AlertCircle, ShieldCheck, RotateCcw, Upload, Car, CheckCircle, Wrench, Shield, HardHat, Settings, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TeamEditDialog } from "@/components/TeamEditDialog";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import VehicleManagement from "./VehicleManagement";
+import SafetyEquipment from "./SafetyEquipment";
 
 type DashboardTab = "safety" | "vehicle" | "equipment";
 
@@ -539,52 +541,10 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {showVehicleDetail && vehicles && (
-                <Card className="shadow-xl border-border/50 overflow-hidden">
-                  <div className="bg-muted/30 px-3 sm:px-6 py-2 sm:py-4 border-b flex items-center justify-between">
-                    <h3 className="font-bold text-sm sm:text-base flex items-center gap-2">
-                      <Car className="w-4 h-4 text-cyan-500" />
-                      차량 목록
-                    </h3>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">{vehicles.length}대</span>
-                  </div>
-                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    <Table className="min-w-[500px]">
-                      <TableHeader className="bg-muted/50 sticky top-0">
-                        <TableRow>
-                          <TableHead className="text-[10px] sm:text-xs py-1">차량번호</TableHead>
-                          <TableHead className="text-[10px] sm:text-xs py-1">부서</TableHead>
-                          <TableHead className="text-[10px] sm:text-xs py-1">주운행자</TableHead>
-                          <TableHead className="text-[10px] sm:text-xs py-1">상태</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {vehicles.slice(0, 20).map((v) => (
-                          <TableRow key={v.id} className="hover:bg-muted/20">
-                            <TableCell className="text-[11px] sm:text-xs py-1 font-medium">{v.plateNumber}</TableCell>
-                            <TableCell className="text-[11px] sm:text-xs py-1">{v.team?.replace('운용팀', '') || '-'}</TableCell>
-                            <TableCell className="text-[11px] sm:text-xs py-1">{v.driver || '-'}</TableCell>
-                            <TableCell className="text-[11px] sm:text-xs py-1">
-                              <span className={cn(
-                                "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                v.status === "운행중" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                                v.status === "정비중" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-                                v.status === "대기" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                              )}>
-                                {v.status}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    {vehicles.length > 20 && (
-                      <div className="p-2 text-center text-xs text-muted-foreground border-t">
-                        외 {vehicles.length - 20}대 더 있음
-                      </div>
-                    )}
-                  </div>
-                </Card>
+              {showVehicleDetail && (
+                <div className="mt-4">
+                  <VehicleManagement embedded />
+                </div>
               )}
             </motion.div>
           )}
@@ -659,49 +619,10 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {showEquipmentDetail && equipmentRecords && (
-                <Card className="shadow-xl border-border/50 overflow-hidden">
-                  <div className="bg-muted/30 px-3 sm:px-6 py-2 sm:py-4 border-b flex items-center justify-between">
-                    <h3 className="font-bold text-sm sm:text-base flex items-center gap-2">
-                      <HardHat className="w-4 h-4 text-amber-500" />
-                      팀별 보호구 현황
-                    </h3>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">{equipmentRecords.length}개 팀</span>
-                  </div>
-                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    <Table className="min-w-[400px]">
-                      <TableHeader className="bg-muted/50 sticky top-0">
-                        <TableRow>
-                          <TableHead className="text-[10px] sm:text-xs py-1">팀명</TableHead>
-                          <TableHead className="text-[10px] sm:text-xs py-1 text-center">총수량</TableHead>
-                          <TableHead className="text-[10px] sm:text-xs py-1 text-center text-green-600">양호</TableHead>
-                          <TableHead className="text-[10px] sm:text-xs py-1 text-center text-red-600">불량</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {equipmentRecords.map((record) => {
-                          try {
-                            const parsed = JSON.parse(record.content);
-                            const items = parsed.items || [];
-                            const total = items.reduce((sum: number, i: { quantity?: number }) => sum + (i.quantity || 0), 0);
-                            const good = items.filter((i: { status?: string }) => i.status === "양호").reduce((sum: number, i: { quantity?: number }) => sum + (i.quantity || 0), 0);
-                            const bad = items.filter((i: { status?: string }) => i.status === "불량").reduce((sum: number, i: { quantity?: number }) => sum + (i.quantity || 0), 0);
-                            return (
-                              <TableRow key={record.id} className="hover:bg-muted/20">
-                                <TableCell className="text-[11px] sm:text-xs py-1 font-medium">{parsed.team?.replace('운용팀', '') || '-'}</TableCell>
-                                <TableCell className="text-[11px] sm:text-xs py-1 text-center">{total}</TableCell>
-                                <TableCell className="text-[11px] sm:text-xs py-1 text-center text-green-600 font-medium">{good}</TableCell>
-                                <TableCell className="text-[11px] sm:text-xs py-1 text-center text-red-600 font-medium">{bad}</TableCell>
-                              </TableRow>
-                            );
-                          } catch {
-                            return null;
-                          }
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Card>
+              {showEquipmentDetail && (
+                <div className="mt-4">
+                  <SafetyEquipment embedded />
+                </div>
               )}
             </motion.div>
           )}

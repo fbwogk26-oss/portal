@@ -41,7 +41,11 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-export default function VehicleManagement() {
+interface VehicleManagementProps {
+  embedded?: boolean;
+}
+
+export default function VehicleManagement({ embedded = false }: VehicleManagementProps) {
   const { data: vehicles, isLoading } = useVehicles();
   const { mutate: createVehicle, isPending: isCreating } = useCreateVehicle();
   const { mutate: updateVehicle } = useUpdateVehicle();
@@ -256,30 +260,31 @@ export default function VehicleManagement() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2.5 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl text-white shadow-lg shadow-cyan-500/30">
-              <Car className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+    <div className={embedded ? "space-y-4" : "max-w-7xl mx-auto space-y-4 sm:space-y-6"}>
+      {!embedded && (
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2.5 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl text-white shadow-lg shadow-cyan-500/30">
+                <Car className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground">차량 관리</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">업무용 차량 관리</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground">차량 관리</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground">업무용 차량 관리</p>
-            </div>
+            {!isLocked && (
+              <Button 
+                size="sm"
+                onClick={() => { resetForm(); setShowAddDialog(true); }}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white gap-1.5 shadow-lg h-8 sm:h-9 text-xs sm:text-sm"
+                data-testid="button-add-vehicle"
+              >
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">차량 등록</span><span className="sm:hidden">등록</span>
+              </Button>
+            )}
           </div>
-          {!isLocked && (
-            <Button 
-              size="sm"
-              onClick={() => { resetForm(); setShowAddDialog(true); }}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white gap-1.5 shadow-lg h-8 sm:h-9 text-xs sm:text-sm"
-              data-testid="button-add-vehicle"
-            >
-              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">차량 등록</span><span className="sm:hidden">등록</span>
-            </Button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
           <input
             type="file"
             ref={excelInputRef}
@@ -308,9 +313,53 @@ export default function VehicleManagement() {
             <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">엑셀 다운로드</span><span className="sm:hidden">다운로드</span>
           </Button>
         </div>
-      </div>
+        </div>
+      )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      {embedded && (
+        <div className="flex items-center justify-between mb-2">
+          <input
+            type="file"
+            ref={excelInputRef}
+            onChange={handleExcelUpload}
+            accept=".xlsx,.xls"
+            className="hidden"
+            data-testid="input-excel-upload-embedded"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {!isLocked && (
+              <Button 
+                size="sm"
+                onClick={() => { resetForm(); setShowAddDialog(true); }}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white gap-1.5 h-8 text-xs"
+                data-testid="button-add-vehicle-embedded"
+              >
+                <Plus className="w-3.5 h-3.5" /> 차량 등록
+              </Button>
+            )}
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => excelInputRef.current?.click()}
+              disabled={isLocked || isExcelUploading}
+              className="gap-1.5 h-8 text-xs"
+            >
+              <Upload className="w-3.5 h-3.5" /> 업로드
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/api/vehicles/export'}
+              className="gap-1.5 h-8 text-xs"
+            >
+              <Download className="w-3.5 h-3.5" /> 다운로드
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!embedded && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <Card 
           className={`bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer transition-all hover:shadow-lg ${filterStatus === "all" ? "ring-2 ring-slate-400 dark:ring-slate-500" : ""}`}
           onClick={() => setFilterStatus("all")}
@@ -371,7 +420,8 @@ export default function VehicleManagement() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-2.5 sm:p-4">
