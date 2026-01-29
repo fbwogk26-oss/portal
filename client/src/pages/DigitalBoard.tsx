@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MonitorPlay, Plus, Trash2, Upload, X, ChevronLeft, ChevronRight, Play, Pause, Image, Maximize2 } from "lucide-react";
+import { MonitorPlay, Plus, Trash2, Upload, X, ChevronLeft, ChevronRight, Play, Pause, Image, Maximize2, Images } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -25,7 +26,11 @@ export default function DigitalBoard() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkUploadProgress, setBulkUploadProgress] = useState(0);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
   const slideshowRef = useRef<HTMLDivElement>(null);
 
   const slideList = slides || [];
@@ -61,6 +66,67 @@ export default function DigitalBoard() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleBulkFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 30) {
+      toast({ variant: "destructive", title: "최대 30개까지 선택 가능합니다." });
+      setBulkFiles(files.slice(0, 30));
+    } else {
+      setBulkFiles(files);
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (bulkFiles.length === 0) return;
+    
+    setIsBulkUploading(true);
+    setBulkUploadProgress(0);
+    
+    let successCount = 0;
+    
+    for (let i = 0; i < bulkFiles.length; i++) {
+      const file = bulkFiles[i];
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        
+        if (data.imageUrl) {
+          const fileName = file.name.replace(/\.[^/.]+$/, "");
+          const contentData = JSON.stringify({
+            text: "",
+            imageUrl: data.imageUrl,
+          });
+          
+          await new Promise<void>((resolve) => {
+            createSlide({ title: fileName, content: contentData, category: "digital_board" }, {
+              onSuccess: () => {
+                successCount++;
+                resolve();
+              },
+              onError: () => resolve()
+            });
+          });
+        }
+      } catch (err) {
+        console.error('Upload failed for:', file.name);
+      }
+      
+      setBulkUploadProgress(Math.round(((i + 1) / bulkFiles.length) * 100));
+    }
+    
+    setIsBulkUploading(false);
+    setBulkFiles([]);
+    setBulkUploadProgress(0);
+    if (bulkInputRef.current) bulkInputRef.current.value = "";
+    toast({ title: `${successCount}개 슬라이드 등록 완료` });
   };
 
   const handleAdd = () => {
@@ -227,8 +293,73 @@ export default function DigitalBoard() {
       <Card className="border-indigo-200 dark:border-indigo-900/30">
         <CardHeader className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b">
           <CardTitle className="text-lg flex items-center gap-2">
+            <Images className="w-5 h-5 text-indigo-600" />
+            대량 업로드 (최대 30개)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            ref={bulkInputRef}
+            onChange={handleBulkFileSelect}
+            className="hidden"
+            data-testid="input-bulk-images"
+          />
+          <div 
+            onClick={() => !isLocked && !isBulkUploading && bulkInputRef.current?.click()}
+            className={`w-full border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 transition-colors ${isLocked || isBulkUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10'}`}
+          >
+            <Images className="w-12 h-12 text-indigo-500" />
+            <div className="text-center">
+              <p className="font-medium">클릭하여 이미지 선택</p>
+              <p className="text-sm text-muted-foreground">한 번에 최대 30개까지 업로드 가능</p>
+            </div>
+          </div>
+          
+          {bulkFiles.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{bulkFiles.length}개 이미지 선택됨</p>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => { setBulkFiles([]); if (bulkInputRef.current) bulkInputRef.current.value = ""; }}
+                  disabled={isBulkUploading}
+                >
+                  <X className="w-4 h-4 mr-1" /> 취소
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                {bulkFiles.map((file, idx) => (
+                  <div key={idx} className="text-xs bg-muted px-2 py-1 rounded">{file.name}</div>
+                ))}
+              </div>
+              {isBulkUploading && (
+                <div className="space-y-2">
+                  <Progress value={bulkUploadProgress} className="h-2" />
+                  <p className="text-sm text-center text-muted-foreground">업로드 중... {bulkUploadProgress}%</p>
+                </div>
+              )}
+              <Button 
+                onClick={handleBulkUpload} 
+                disabled={isLocked || isBulkUploading}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                data-testid="button-bulk-upload"
+              >
+                <Upload className="w-4 h-4" /> {bulkFiles.length}개 슬라이드 일괄 등록
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-indigo-200 dark:border-indigo-900/30">
+        <CardHeader className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b">
+          <CardTitle className="text-lg flex items-center gap-2">
             <Plus className="w-5 h-5 text-indigo-600" />
-            슬라이드 추가
+            개별 슬라이드 추가
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
