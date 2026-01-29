@@ -38,6 +38,8 @@ type DashboardTab = "safety" | "vehicle" | "equipment";
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("safety");
   const [showDetailTable, setShowDetailTable] = useState(false);
+  const [showVehicleDetail, setShowVehicleDetail] = useState(false);
+  const [showEquipmentDetail, setShowEquipmentDetail] = useState(false);
   const [year, setYear] = useState(2026);
   const [baseVehicleCount, setBaseVehicleCount] = useState(15);
   const [isUploading, setIsUploading] = useState(false);
@@ -476,55 +478,114 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-                <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-slate-200 dark:bg-slate-700 rounded-lg sm:rounded-xl">
-                      <Car className="w-4 h-4 sm:w-6 sm:h-6 text-slate-600 dark:text-slate-300" />
+              <Card className="shadow-lg border-border/50">
+                <CardHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <Car className="w-5 h-5 text-cyan-500" />
+                      차량 관리 현황
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">업무용 차량 현황</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowVehicleDetail(!showVehicleDetail)}
+                    data-testid="button-toggle-vehicle-detail"
+                  >
+                    <Settings className={cn("w-4 h-4", showVehicleDetail && "text-primary")} />
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 pt-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                        <Car className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold">{vehicleStats.total}</p>
+                        <p className="text-xs text-muted-foreground">전체</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold">{vehicleStats.total}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">전체</p>
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-green-200 dark:bg-green-800 rounded-lg">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{vehicleStats.operating}</p>
+                        <p className="text-xs text-muted-foreground">운행중</p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-200 dark:border-green-800">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-green-200 dark:bg-green-800 rounded-lg sm:rounded-xl">
-                      <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-300" />
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-amber-200 dark:bg-amber-800 rounded-lg">
+                        <Wrench className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-400">{vehicleStats.maintenance}</p>
+                        <p className="text-xs text-muted-foreground">정비중</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{vehicleStats.operating}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">운행중</p>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-blue-200 dark:bg-blue-800 rounded-lg">
+                        <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{vehicleStats.idle}</p>
+                        <p className="text-xs text-muted-foreground">대기</p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 border-amber-200 dark:border-amber-800">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-amber-200 dark:bg-amber-800 rounded-lg sm:rounded-xl">
-                      <Wrench className="w-4 h-4 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-300" />
-                    </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-400">{vehicleStats.maintenance}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">정비중</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-blue-200 dark:bg-blue-800 rounded-lg sm:rounded-xl">
-                      <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-300" />
-                    </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{vehicleStats.idle}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">대기</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              <Card className="p-4 text-center text-muted-foreground">
-                <p className="text-sm">상세 차량 관리는 <a href="/vehicles" className="text-primary underline">차량 관리</a> 메뉴에서 확인하세요.</p>
+                  </div>
+                </CardContent>
               </Card>
+
+              {showVehicleDetail && vehicles && (
+                <Card className="shadow-xl border-border/50 overflow-hidden">
+                  <div className="bg-muted/30 px-3 sm:px-6 py-2 sm:py-4 border-b flex items-center justify-between">
+                    <h3 className="font-bold text-sm sm:text-base flex items-center gap-2">
+                      <Car className="w-4 h-4 text-cyan-500" />
+                      차량 목록
+                    </h3>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">{vehicles.length}대</span>
+                  </div>
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <Table className="min-w-[500px]">
+                      <TableHeader className="bg-muted/50 sticky top-0">
+                        <TableRow>
+                          <TableHead className="text-[10px] sm:text-xs py-1">차량번호</TableHead>
+                          <TableHead className="text-[10px] sm:text-xs py-1">부서</TableHead>
+                          <TableHead className="text-[10px] sm:text-xs py-1">주운행자</TableHead>
+                          <TableHead className="text-[10px] sm:text-xs py-1">상태</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vehicles.slice(0, 20).map((v) => (
+                          <TableRow key={v.id} className="hover:bg-muted/20">
+                            <TableCell className="text-[11px] sm:text-xs py-1 font-medium">{v.plateNumber}</TableCell>
+                            <TableCell className="text-[11px] sm:text-xs py-1">{v.team?.replace('운용팀', '') || '-'}</TableCell>
+                            <TableCell className="text-[11px] sm:text-xs py-1">{v.driver || '-'}</TableCell>
+                            <TableCell className="text-[11px] sm:text-xs py-1">
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                v.status === "운행중" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                                v.status === "정비중" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+                                v.status === "대기" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              )}>
+                                {v.status}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {vehicles.length > 20 && (
+                      <div className="p-2 text-center text-xs text-muted-foreground border-t">
+                        외 {vehicles.length - 20}대 더 있음
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
             </motion.div>
           )}
 
@@ -537,55 +598,111 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-                <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-slate-200 dark:bg-slate-700 rounded-lg sm:rounded-xl">
-                      <HardHat className="w-4 h-4 sm:w-6 sm:h-6 text-slate-600 dark:text-slate-300" />
+              <Card className="shadow-lg border-border/50">
+                <CardHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <HardHat className="w-5 h-5 text-amber-500" />
+                      안전보호구 현황
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">보호구 관리 현황</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowEquipmentDetail(!showEquipmentDetail)}
+                    data-testid="button-toggle-equipment-detail"
+                  >
+                    <Settings className={cn("w-4 h-4", showEquipmentDetail && "text-primary")} />
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 pt-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                        <HardHat className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold">{equipmentStats.totalQuantity}</p>
+                        <p className="text-xs text-muted-foreground">전체 현황</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold">{equipmentStats.totalQuantity}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">전체 현황</p>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-blue-200 dark:bg-blue-800 rounded-lg">
+                        <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{equipmentStats.registeredQty}</p>
+                        <p className="text-xs text-muted-foreground">등록</p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-blue-200 dark:bg-blue-800 rounded-lg sm:rounded-xl">
-                      <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-300" />
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-green-200 dark:bg-green-800 rounded-lg">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{equipmentStats.goodQty}</p>
+                        <p className="text-xs text-muted-foreground">양호</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-400">{equipmentStats.registeredQty}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">등록</p>
+                    <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-lg p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-red-200 dark:bg-red-800 rounded-lg">
+                        <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-300" />
+                      </div>
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-red-700 dark:text-red-400">{equipmentStats.badQty}</p>
+                        <p className="text-xs text-muted-foreground">불량</p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-200 dark:border-green-800">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-green-200 dark:bg-green-800 rounded-lg sm:rounded-xl">
-                      <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-300" />
-                    </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-400">{equipmentStats.goodQty}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">양호</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 border-red-200 dark:border-red-800">
-                  <CardContent className="p-2.5 sm:p-4 flex items-center gap-2 sm:gap-4">
-                    <div className="p-2 sm:p-3 bg-red-200 dark:bg-red-800 rounded-lg sm:rounded-xl">
-                      <AlertTriangle className="w-4 h-4 sm:w-6 sm:h-6 text-red-600 dark:text-red-300" />
-                    </div>
-                    <div>
-                      <p className="text-lg sm:text-2xl font-bold text-red-700 dark:text-red-400">{equipmentStats.badQty}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">불량</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              <Card className="p-4 text-center text-muted-foreground">
-                <p className="text-sm">상세 보호구 관리는 <a href="/equipment/status" className="text-primary underline">팀별 보호구 현황</a> 메뉴에서 확인하세요.</p>
+                  </div>
+                </CardContent>
               </Card>
+
+              {showEquipmentDetail && equipmentRecords && (
+                <Card className="shadow-xl border-border/50 overflow-hidden">
+                  <div className="bg-muted/30 px-3 sm:px-6 py-2 sm:py-4 border-b flex items-center justify-between">
+                    <h3 className="font-bold text-sm sm:text-base flex items-center gap-2">
+                      <HardHat className="w-4 h-4 text-amber-500" />
+                      팀별 보호구 현황
+                    </h3>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">{equipmentRecords.length}개 팀</span>
+                  </div>
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <Table className="min-w-[400px]">
+                      <TableHeader className="bg-muted/50 sticky top-0">
+                        <TableRow>
+                          <TableHead className="text-[10px] sm:text-xs py-1">팀명</TableHead>
+                          <TableHead className="text-[10px] sm:text-xs py-1 text-center">총수량</TableHead>
+                          <TableHead className="text-[10px] sm:text-xs py-1 text-center text-green-600">양호</TableHead>
+                          <TableHead className="text-[10px] sm:text-xs py-1 text-center text-red-600">불량</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {equipmentRecords.map((record) => {
+                          try {
+                            const parsed = JSON.parse(record.content);
+                            const items = parsed.items || [];
+                            const total = items.reduce((sum: number, i: { quantity?: number }) => sum + (i.quantity || 0), 0);
+                            const good = items.filter((i: { status?: string }) => i.status === "양호").reduce((sum: number, i: { quantity?: number }) => sum + (i.quantity || 0), 0);
+                            const bad = items.filter((i: { status?: string }) => i.status === "불량").reduce((sum: number, i: { quantity?: number }) => sum + (i.quantity || 0), 0);
+                            return (
+                              <TableRow key={record.id} className="hover:bg-muted/20">
+                                <TableCell className="text-[11px] sm:text-xs py-1 font-medium">{parsed.team?.replace('운용팀', '') || '-'}</TableCell>
+                                <TableCell className="text-[11px] sm:text-xs py-1 text-center">{total}</TableCell>
+                                <TableCell className="text-[11px] sm:text-xs py-1 text-center text-green-600 font-medium">{good}</TableCell>
+                                <TableCell className="text-[11px] sm:text-xs py-1 text-center text-red-600 font-medium">{bad}</TableCell>
+                              </TableRow>
+                            );
+                          } catch {
+                            return null;
+                          }
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
