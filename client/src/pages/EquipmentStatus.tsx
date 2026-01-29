@@ -161,10 +161,13 @@ export default function EquipmentStatus() {
   const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [bulkAddMode, setBulkAddMode] = useState(false);
   const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>(DEFAULT_EQUIPMENT_LIST);
   const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("보호구");
+  const [bulkItemName, setBulkItemName] = useState("");
+  const [bulkItemCategory, setBulkItemCategory] = useState("보호구");
 
   const allTeamsData = useMemo(() => {
     if (!statusRecords) return [];
@@ -335,6 +338,54 @@ export default function EquipmentStatus() {
     }
   };
 
+  const handleBulkAdd = async () => {
+    if (!bulkItemName.trim()) {
+      toast({ variant: "destructive", title: "용품명을 입력해주세요." });
+      return;
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const record of statusRecords || []) {
+      try {
+        const parsed = JSON.parse(record.content) as TeamData;
+        const existingItem = parsed.items?.find(i => i.name === bulkItemName.trim());
+        
+        if (existingItem) {
+          continue;
+        }
+
+        const newItems = [
+          ...(parsed.items || []),
+          { name: bulkItemName.trim(), quantity: 0, category: bulkItemCategory, status: "등록" }
+        ];
+
+        const contentData = JSON.stringify({
+          team: parsed.team,
+          items: newItems,
+          lastUpdated: new Date().toISOString()
+        });
+
+        await new Promise<void>((resolve, reject) => {
+          updateRecord({ id: record.id, title: record.title, content: contentData }, {
+            onSuccess: () => { successCount++; resolve(); },
+            onError: () => { errorCount++; resolve(); }
+          });
+        });
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setBulkItemName("");
+    toast({ 
+      title: "일괄 추가 완료", 
+      description: `${successCount}개 팀에 추가되었습니다.${errorCount > 0 ? ` (${errorCount}개 실패)` : ""}`
+    });
+    setBulkAddMode(false);
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -363,7 +414,7 @@ export default function EquipmentStatus() {
         {selectedTeam && selectedTeam !== "all" && (
           <Button 
             variant={editMode ? "default" : "outline"}
-            onClick={() => setEditMode(!editMode)}
+            onClick={() => { setEditMode(!editMode); setBulkAddMode(false); }}
             className="gap-2"
             data-testid="button-edit-mode"
           >
@@ -371,6 +422,15 @@ export default function EquipmentStatus() {
             {editMode ? "편집 중" : "편집"}
           </Button>
         )}
+        <Button 
+          variant={bulkAddMode ? "default" : "outline"}
+          onClick={() => { setBulkAddMode(!bulkAddMode); setEditMode(false); }}
+          className="gap-2"
+          data-testid="button-bulk-add"
+        >
+          <Plus className="w-4 h-4" />
+          일괄 추가
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -589,6 +649,57 @@ export default function EquipmentStatus() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {bulkAddMode && (
+        <Card className="border-green-200 dark:border-green-900/30">
+          <CardHeader className="bg-green-50/50 dark:bg-green-900/10 border-b">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Plus className="w-5 h-5 text-green-600" />
+              모든 팀에 용품 일괄 추가
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              새 용품을 등록하면 모든 팀(7개 팀)에 동시에 추가됩니다.
+            </p>
+            <div className="flex flex-wrap gap-3 items-center">
+              <Select value={bulkItemCategory} onValueChange={setBulkItemCategory}>
+                <SelectTrigger className="w-[140px]" data-testid="select-bulk-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input 
+                placeholder="용품명 입력" 
+                value={bulkItemName} 
+                onChange={e => setBulkItemName(e.target.value)}
+                className="flex-1 min-w-[250px]"
+                data-testid="input-bulk-item"
+                onKeyDown={e => e.key === 'Enter' && handleBulkAdd()}
+              />
+              <Button 
+                onClick={handleBulkAdd} 
+                disabled={!bulkItemName.trim() || isUpdating}
+                className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                data-testid="button-bulk-add-submit"
+              >
+                <Plus className="w-4 h-4" />
+                {isUpdating ? "추가 중..." : "전체 팀에 추가"}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setBulkAddMode(false)}
+              >
+                취소
+              </Button>
             </div>
           </CardContent>
         </Card>
