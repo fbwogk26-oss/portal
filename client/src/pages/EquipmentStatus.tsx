@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HardHat, Plus, Trash2, ChevronLeft, Save, Edit2, Cone, Package } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { HardHat, Plus, Trash2, ChevronLeft, Save, Edit2, Cone, Package, Download, Upload } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import * as XLSX from "xlsx";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -168,6 +170,103 @@ export default function EquipmentStatus() {
   const [newItemCategory, setNewItemCategory] = useState("보호구");
   const [bulkItemName, setBulkItemName] = useState("");
   const [bulkItemCategory, setBulkItemCategory] = useState("보호구");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExcelDownload = () => {
+    const workbook = XLSX.utils.book_new();
+    const allData: { 팀명: string; 용품명: string; 카테고리: string; 수량: number; 상태: string }[] = [];
+    
+    allTeamsData.forEach(team => {
+      team.items?.forEach(item => {
+        allData.push({
+          팀명: team.team,
+          용품명: item.name,
+          카테고리: item.category || '기타품목',
+          수량: item.quantity,
+          상태: item.status || '등록'
+        });
+      });
+    });
+    
+    const worksheet = XLSX.utils.json_to_sheet(allData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '안전용품현황');
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    XLSX.writeFile(workbook, `equipment_status_${today}.xlsx`);
+    toast({ title: "다운로드 완료", description: "안전용품 현황이 엑셀 파일로 저장되었습니다." });
+  };
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+      
+      const teamItemsMap = new Map<string, EquipmentItem[]>();
+      jsonData.forEach(row => {
+        const teamName = String(row['팀명'] || '');
+        if (!teamName) return;
+        
+        if (!teamItemsMap.has(teamName)) {
+          teamItemsMap.set(teamName, []);
+        }
+        teamItemsMap.get(teamName)!.push({
+          name: String(row['용품명'] || row['name'] || ''),
+          quantity: Number(row['수량'] || row['quantity']) || 0,
+          category: String(row['카테고리'] || row['category'] || '기타품목'),
+          status: String(row['상태'] || row['status'] || '등록')
+        });
+      });
+      
+      let successCount = 0;
+      for (const [teamName, items] of teamItemsMap) {
+        const existingRecord = statusRecords?.find(r => {
+          try {
+            const parsed = JSON.parse(r.content) as TeamData;
+            return parsed.team === teamName;
+          } catch {
+            return false;
+          }
+        });
+        
+        const contentData = JSON.stringify({
+          team: teamName,
+          items,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        if (existingRecord) {
+          await new Promise<void>((resolve) => {
+            updateRecord({ id: existingRecord.id, title: `${teamName} 보호구 현황`, content: contentData }, {
+              onSuccess: () => { successCount++; resolve(); },
+              onError: () => resolve()
+            });
+          });
+        } else {
+          await new Promise<void>((resolve) => {
+            createRecord({ title: `${teamName} 보호구 현황`, content: contentData, category: "equip_status" }, {
+              onSuccess: () => { successCount++; resolve(); },
+              onError: () => resolve()
+            });
+          });
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/notices'] });
+      toast({ title: "업로드 완료", description: `${successCount}개 팀 데이터가 업데이트되었습니다.` });
+    } catch (err) {
+      console.error(err);
+      toast({ variant: "destructive", title: "업로드 실패", description: "엑셀 파일 형식을 확인해주세요." });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const allTeamsData = useMemo(() => {
     if (!statusRecords) return [];
@@ -430,6 +529,33 @@ export default function EquipmentStatus() {
         >
           <Plus className="w-4 h-4" />
           일괄 추가
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleExcelUpload}
+          accept=".xlsx,.xls"
+          className="hidden"
+          data-testid="input-equipment-upload"
+        />
+        <Button 
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isLocked || isUploading}
+          className="gap-2"
+          data-testid="button-upload-equipment"
+        >
+          <Upload className="w-4 h-4" />
+          엑셀 업로드
+        </Button>
+        <Button 
+          variant="secondary"
+          onClick={handleExcelDownload}
+          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          data-testid="button-download-equipment"
+        >
+          <Download className="w-4 h-4" />
+          엑셀 다운로드
         </Button>
       </div>
 
