@@ -179,7 +179,11 @@ export default function EquipmentStatus() {
 
   const aggregatedData = useMemo(() => {
     const allItems: EquipmentItem[] = [];
-    allTeamsData.forEach(team => {
+    const teamsToShow = selectedTeam && selectedTeam !== "all" 
+      ? allTeamsData.filter(t => t.team === selectedTeam)
+      : allTeamsData;
+    
+    teamsToShow.forEach(team => {
       if (team.items) {
         team.items.forEach(item => {
           allItems.push({ ...item, category: item.category || "기타품목", status: item.status || "등록" });
@@ -187,7 +191,7 @@ export default function EquipmentStatus() {
       }
     });
     return allItems;
-  }, [allTeamsData]);
+  }, [allTeamsData, selectedTeam]);
 
   const categoryStats = useMemo(() => {
     const items = selectedCategory 
