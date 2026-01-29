@@ -1,4 +1,4 @@
-import { useNotices, useCreateNotice, useDeleteNotice } from "@/hooks/use-notices";
+import { useNotices, useCreateNotice, useDeleteNotice, useUpdateNotice } from "@/hooks/use-notices";
 import { useLockStatus } from "@/hooks/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ export default function EquipmentRequest() {
   const { data: requests, isLoading } = useNotices("equip_request");
   const { mutate: createRequest, isPending: isCreating } = useCreateNotice();
   const { mutate: deleteRequest } = useDeleteNotice();
+  const { mutate: updateRequest, isPending: isUpdating } = useUpdateNotice();
   const { data: lockData } = useLockStatus();
   const isLocked = lockData?.isLocked;
   const { toast } = useToast();
@@ -80,7 +81,7 @@ export default function EquipmentRequest() {
       team: selectedTeam,
       requester: requesterName,
       text: content,
-      status: "pending",
+      status: "지급요청",
       images: images,
     });
     createRequest({ title, content: contentData, category: "equip_request" }, {
@@ -109,13 +110,25 @@ export default function EquipmentRequest() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
-        return <Badge className="bg-green-100 text-green-700 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" />승인</Badge>;
-      case "rejected":
-        return <Badge className="bg-red-100 text-red-700 border-red-200"><XCircle className="w-3 h-3 mr-1" />반려</Badge>;
+      case "지급완료":
+        return <Badge className="bg-green-100 text-green-700 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" />지급완료</Badge>;
+      case "지급요청":
       default:
-        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200"><Clock className="w-3 h-3 mr-1" />대기중</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200"><Clock className="w-3 h-3 mr-1" />지급요청</Badge>;
     }
+  };
+
+  const handleStatusChange = (item: any, newStatus: string) => {
+    const parsed = parseContent(item.content);
+    const updatedContent = JSON.stringify({
+      ...parsed,
+      status: newStatus,
+    });
+    updateRequest({ id: item.id, title: item.title, content: updatedContent }, {
+      onSuccess: () => {
+        toast({ title: "상태 변경 완료", description: `상태가 "${newStatus}"(으)로 변경되었습니다.` });
+      }
+    });
   };
 
   const filteredRequests = requests || [];
@@ -277,7 +290,31 @@ export default function EquipmentRequest() {
                       exit={{ opacity: 0 }}
                       className="group hover:bg-muted/20"
                     >
-                      <TableCell>{getStatusBadge(parsed.status)}</TableCell>
+                      <TableCell>
+                        <Select 
+                          value={parsed.status || "지급요청"} 
+                          onValueChange={(val) => handleStatusChange(item, val)}
+                          disabled={isUpdating}
+                        >
+                          <SelectTrigger className="w-[110px] h-8" data-testid={`select-status-${item.id}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="지급요청">
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-yellow-600" />
+                                지급요청
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="지급완료">
+                              <div className="flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-green-600" />
+                                지급완료
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
                       <TableCell className="font-medium">{parsed.team || "-"}</TableCell>
                       <TableCell>{parsed.requester || "-"}</TableCell>
                       <TableCell className="font-medium">{item.title}</TableCell>
