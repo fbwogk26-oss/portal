@@ -8,7 +8,8 @@ import {
   Menu,
   X,
   Car,
-  HardHat
+  HardHat,
+  MonitorPlay
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { label: "차량관리", href: "/vehicle", icon: Car },
   { label: "안전보호구 관리", href: "/equipment", icon: HardHat },
   { label: "출입신청(효목)", href: "/access", icon: DoorOpen },
+  { label: "전자게시판", href: "/digital-board", icon: MonitorPlay },
 ];
 
 export function Sidebar() {
