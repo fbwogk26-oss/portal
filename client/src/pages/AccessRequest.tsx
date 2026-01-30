@@ -208,34 +208,6 @@ export default function AccessRequest() {
     return Array.from(dates).sort((a, b) => b.localeCompare(a));
   }, [materials]);
 
-  const handleBatchExcelDownload = async () => {
-    if (filteredMaterials.length === 0) {
-      toast({ variant: "destructive", title: "다운로드할 항목이 없습니다" });
-      return;
-    }
-    
-    const ids = filteredMaterials.map(m => m.id).join(',');
-    try {
-      const response = await fetch(`/api/access/excel/batch?ids=${ids}`);
-      if (!response.ok) throw new Error('Download failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const dateLabel = filterRegistrationDate || filterVisitDate || format(new Date(), "yyyy.MM.dd");
-      a.download = `효목사옥_출입신청서_일괄_${dateLabel}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast({ title: `${filteredMaterials.length}건 엑셀 다운로드 완료` });
-    } catch (err) {
-      toast({ variant: "destructive", title: "다운로드 실패" });
-    }
-  };
-
   const clearFilters = () => {
     setFilterVisitDate("");
     setFilterRegistrationDate("");
@@ -531,17 +503,6 @@ export default function AccessRequest() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{filteredMaterials.length}건</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBatchExcelDownload}
-              disabled={filteredMaterials.length === 0}
-              className="h-8 gap-1.5 text-xs bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-              data-testid="button-batch-excel-download"
-            >
-              <Download className="w-3.5 h-3.5" />
-              일괄 다운로드
-            </Button>
           </div>
         </div>
       </Card>
