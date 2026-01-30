@@ -2,12 +2,13 @@ import { useNotices, useCreateNotice, useDeleteNotice } from "@/hooks/use-notice
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { DoorOpen, Plus, Trash2, FileText, Download, UserPlus, X } from "lucide-react";
-import { useState } from "react";
+import { DoorOpen, Plus, Trash2, FileText, Download, UserPlus, X, Filter, Calendar } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO, isSameDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PersonData {
   department: string;
@@ -44,9 +45,11 @@ export default function AccessRequest() {
   const { data: materials, isLoading } = useNotices("access");
   const { mutate: createMaterial, isPending: isCreating } = useCreateNotice();
   const { mutate: deleteMaterial } = useDeleteNotice();
-  // 출입신청은 잠금 상태에서도 사용 가능
   const isLocked = false;
   const { toast } = useToast();
+
+  const [filterVisitDate, setFilterVisitDate] = useState("");
+  const [filterRegistrationDate, setFilterRegistrationDate] = useState("");
 
   const [formData, setFormData] = useState<AccessFormData>({
     visitPeriodStartDate: "",
@@ -157,6 +160,85 @@ export default function AccessRequest() {
     } catch (err) {
       toast({ variant: "destructive", title: "다운로드 실패" });
     }
+  };
+
+  const filteredMaterials = useMemo(() => {
+    if (!materials) return [];
+    
+    let filtered = [...materials];
+    
+    if (filterVisitDate && filterVisitDate !== "all") {
+      filtered = filtered.filter(item => {
+        const parsed = parseContent(item.content);
+        if (!parsed) return false;
+        return parsed.visitPeriodStartDate === filterVisitDate || parsed.visitPeriodEndDate === filterVisitDate;
+      });
+    }
+    
+    if (filterRegistrationDate && filterRegistrationDate !== "all") {
+      filtered = filtered.filter(item => {
+        if (!item.createdAt) return false;
+        const createdDate = format(new Date(item.createdAt), "yyyy-MM-dd");
+        return createdDate === filterRegistrationDate;
+      });
+    }
+    
+    return filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  }, [materials, filterVisitDate, filterRegistrationDate]);
+
+  const uniqueRegistrationDates = useMemo(() => {
+    if (!materials) return [];
+    const dates = new Set<string>();
+    materials.forEach(item => {
+      if (item.createdAt) {
+        dates.add(format(new Date(item.createdAt), "yyyy-MM-dd"));
+      }
+    });
+    return Array.from(dates).sort((a, b) => b.localeCompare(a));
+  }, [materials]);
+
+  const uniqueVisitDates = useMemo(() => {
+    if (!materials) return [];
+    const dates = new Set<string>();
+    materials.forEach(item => {
+      const parsed = parseContent(item.content);
+      if (parsed?.visitPeriodStartDate) dates.add(parsed.visitPeriodStartDate);
+      if (parsed?.visitPeriodEndDate) dates.add(parsed.visitPeriodEndDate);
+    });
+    return Array.from(dates).sort((a, b) => b.localeCompare(a));
+  }, [materials]);
+
+  const handleBatchExcelDownload = async () => {
+    if (filteredMaterials.length === 0) {
+      toast({ variant: "destructive", title: "다운로드할 항목이 없습니다" });
+      return;
+    }
+    
+    const ids = filteredMaterials.map(m => m.id).join(',');
+    try {
+      const response = await fetch(`/api/access/excel/batch?ids=${ids}`);
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateLabel = filterRegistrationDate || filterVisitDate || format(new Date(), "yyyy.MM.dd");
+      a.download = `효목사옥_출입신청서_일괄_${dateLabel}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({ title: `${filteredMaterials.length}건 엑셀 다운로드 완료` });
+    } catch (err) {
+      toast({ variant: "destructive", title: "다운로드 실패" });
+    }
+  };
+
+  const clearFilters = () => {
+    setFilterVisitDate("");
+    setFilterRegistrationDate("");
   };
 
   return (
@@ -406,9 +488,67 @@ export default function AccessRequest() {
         </CardContent>
       </Card>
 
+      <Card className="p-4 border-purple-200 dark:border-purple-900/30">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-400">
+            <Filter className="w-4 h-4" />
+            <span>필터</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">방문기간:</Label>
+              <Select value={filterVisitDate} onValueChange={setFilterVisitDate}>
+                <SelectTrigger className="h-8 w-32 text-xs" data-testid="select-filter-visit-date">
+                  <SelectValue placeholder="전체" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  {uniqueVisitDates.map(date => (
+                    <SelectItem key={date} value={date}>{date}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">등록일:</Label>
+              <Select value={filterRegistrationDate} onValueChange={setFilterRegistrationDate}>
+                <SelectTrigger className="h-8 w-32 text-xs" data-testid="select-filter-registration-date">
+                  <SelectValue placeholder="전체" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  {uniqueRegistrationDates.map(date => (
+                    <SelectItem key={date} value={date}>{date}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {((filterVisitDate && filterVisitDate !== "all") || (filterRegistrationDate && filterRegistrationDate !== "all")) && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
+                초기화
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{filteredMaterials.length}건</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBatchExcelDownload}
+              disabled={filteredMaterials.length === 0}
+              className="h-8 gap-1.5 text-xs bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+              data-testid="button-batch-excel-download"
+            >
+              <Download className="w-3.5 h-3.5" />
+              일괄 다운로드
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       <div className="flex flex-col gap-4">
         <AnimatePresence>
-          {[...(materials || [])].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).map((item) => {
+          {filteredMaterials.map((item) => {
             const parsed = parseContent(item.content);
             return (
               <motion.div

@@ -484,6 +484,131 @@ export async function registerRoutes(
     }
   });
 
+  // === ACCESS REQUEST EXCEL DOWNLOAD (Batch - Multiple Items) ===
+  app.get('/api/access/excel/batch', async (req, res) => {
+    try {
+      const idsParam = req.query.ids as string;
+      if (!idsParam) {
+        return res.status(400).json({ message: "No IDs provided" });
+      }
+      
+      const ids = idsParam.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id));
+      if (ids.length === 0) {
+        return res.status(400).json({ message: "Invalid IDs" });
+      }
+
+      const notices = await Promise.all(ids.map(id => storage.getNotice(id)));
+      const validNotices = notices.filter(n => n !== null);
+      
+      if (validNotices.length === 0) {
+        return res.status(404).json({ message: "No valid notices found" });
+      }
+
+      const templatePath = path.join(process.cwd(), "server/templates/access_template.xlsx");
+      
+      if (!fs.existsSync(templatePath)) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(templatePath);
+      const worksheet = workbook.getWorksheet(1);
+      
+      if (!worksheet) {
+        return res.status(500).json({ message: "Worksheet not found" });
+      }
+
+      const formatDateWithDay = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dayName = days[date.getDay()];
+        return `${year}.${month}.${day}(${dayName})`;
+      };
+
+      const firstData = JSON.parse(validNotices[0]!.content);
+      const entranceLocation = firstData.entranceLocation || '';
+      worksheet.getCell('A1').value = `kt MOS남부 대구본부 출입신청 (${validNotices.length}건 일괄) - 출입장소: "${entranceLocation}"`;
+      worksheet.getCell('A2').value = `일괄 다운로드 - ${new Date().toISOString().slice(0, 10)}`;
+      worksheet.getCell('A3').value = '';
+
+      for (let r = 4; r <= 300; r++) {
+        const row = worksheet.getRow(r);
+        row.getCell(8).value = null;
+        row.getCell(9).value = null;
+      }
+      worksheet.getColumn(8).width = 0.1;
+      worksheet.getColumn(9).width = 0.1;
+
+      const templateRow = worksheet.getRow(5);
+      const templateStyle: any = {};
+      for (let col = 1; col <= 7; col++) {
+        const cell = templateRow.getCell(col);
+        templateStyle[col] = {
+          font: cell.font ? { ...cell.font } : undefined,
+          alignment: cell.alignment ? { ...cell.alignment } : undefined,
+          border: cell.border ? { ...cell.border } : undefined,
+          fill: cell.fill ? { ...cell.fill } : undefined,
+        };
+      }
+
+      let rowIndex = 5;
+      let personIndex = 1;
+      
+      for (const notice of validNotices) {
+        const data = JSON.parse(notice!.content);
+        const people = data.people || [];
+        
+        const headerRow = worksheet.getRow(rowIndex);
+        headerRow.getCell(1).value = `[${data.visitPurpose}] ${formatDateWithDay(data.visitPeriodStartDate)} - 인솔: ${data.supervisorName || '-'}`;
+        headerRow.getCell(1).font = { bold: true, size: 10, color: { argb: 'FF6B21A8' } };
+        worksheet.mergeCells(rowIndex, 1, rowIndex, 7);
+        rowIndex++;
+        
+        for (const person of people) {
+          const row = worksheet.getRow(rowIndex);
+          
+          row.getCell(1).value = personIndex;
+          row.getCell(2).value = person.department || '';
+          row.getCell(3).value = person.applicantName || '';
+          row.getCell(4).value = person.idNumber || '';
+          row.getCell(5).value = person.phone || '';
+          row.getCell(6).value = '';
+          row.getCell(7).value = person.hasVehicle === '있음' ? person.vehicleNumber : '';
+
+          for (let col = 1; col <= 7; col++) {
+            const cell = row.getCell(col);
+            if (templateStyle[col]?.font) cell.font = templateStyle[col].font;
+            if (templateStyle[col]?.alignment) cell.alignment = templateStyle[col].alignment;
+            if (templateStyle[col]?.border) cell.border = templateStyle[col].border;
+            if (templateStyle[col]?.fill) cell.fill = templateStyle[col].fill;
+          }
+          
+          row.commit();
+          rowIndex++;
+          personIndex++;
+        }
+        
+        rowIndex++;
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+      const filename = encodeURIComponent(`kt MOS남부 대구본부 출입신청_일괄_${today}.xlsx`);
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(Buffer.from(buffer));
+    } catch (err) {
+      console.error('Batch Excel generation error:', err);
+      res.status(500).json({ message: "Failed to generate batch Excel" });
+    }
+  });
+
   // === SETTINGS (LOCK) ===
   app.get(api.settings.getLock.path, async (req, res) => {
     const setting = await storage.getSetting('global_lock');
