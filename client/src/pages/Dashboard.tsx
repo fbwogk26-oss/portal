@@ -317,7 +317,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span>90+</span>
+                        <span>90이상</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
