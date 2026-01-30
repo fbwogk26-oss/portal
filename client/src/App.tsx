@@ -16,6 +16,7 @@ import EquipmentRequest from "@/pages/EquipmentRequest";
 import AccessRequest from "@/pages/AccessRequest";
 import DigitalBoard from "@/pages/DigitalBoard";
 import NotFound from "@/pages/NotFound";
+import { AIChatbot } from "@/components/AIChatbot";
 import { useLocation } from "wouter";
 
 function Router() {
@@ -55,6 +56,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Router />
+        <AIChatbot />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
