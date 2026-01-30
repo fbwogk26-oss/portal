@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, X, Send, Loader2, Bot, User, Trash2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Bot, User, Trash2, Sparkles } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Conversation, Message } from "@shared/schema";
 
@@ -140,14 +140,18 @@ export function AIChatbot() {
   return (
     <>
       {!isOpen && (
-        <Button
+        <button
           data-testid="button-open-chatbot"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full shadow-lg"
-          size="icon"
+          className="fixed bottom-4 right-4 z-50 h-16 w-16 rounded-full shadow-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-110 flex items-center justify-center group animate-pulse hover:animate-none"
         >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-300" />
+          <div className="relative flex items-center justify-center">
+            <Sparkles className="h-7 w-7 text-white drop-shadow-lg" />
+          </div>
+          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-400 border-2 border-white animate-ping" />
+          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-400 border-2 border-white" />
+        </button>
       )}
 
       {isOpen && (
